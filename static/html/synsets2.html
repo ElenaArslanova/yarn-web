@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>YARN</title>
+	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  	<link rel="stylesheet" type="text/css" href="../css/tag.css">
+</head>
+<style type="text/css">
+	.row-eq-height {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display:         flex;
+}
+</style>
+<body>
+<!-- 	<nav class="navbar navbar-inverse">
+	  <div class="container-fluid">
+	    <div class="navbar-header">
+	      <a class="navbar-brand" href="#">yarn-Web Checker</a>
+	    </div>
+	    <ul class="nav navbar-nav">
+	      <li class="active"><a href="#">Главная</a></li>
+	      <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Править<span class="caret"></span></a>
+	        <ul class="dropdown-menu">
+	          <li><a href="#">Коллекция синсетов</a></li>
+	          <li><a href="#">Одиночный синсет</a></li>
+	        </ul>
+	      </li>
+	      <li><a href="#">Обновления</a></li>
+	    </ul>
+	  </div>
+	</nav> -->
+	<nav class="navbar navbar-toggleable-md navbar-light bg-faded">
+	  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+	    <span class="navbar-toggler-icon"></span>
+	  </button>
+	  <div class="collapse navbar-collapse" id="navbarNavDropdown">
+	    <ul class="navbar-nav">
+	      <li class="nav-item active">
+	        <a class="nav-link" href="#">Главная<span class="sr-only">(current)</span></a>
+	      </li>
+	      <li class="nav-item">
+	        <a class="nav-link" href="#">Новости</a>
+	      </li>
+	      <li class="nav-item">
+	        <a class="nav-link" href="#">Обновления</a>
+	      </li>
+	      <li class="nav-item dropdown">
+	        <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	          Сделать правку
+	        </a>
+	        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+	          <a class="dropdown-item" href="#">Коллекция синсетов</a>
+	          <a class="dropdown-item" href="#">Одиночный синсет</a>
+	        </div>
+	      </li>
+	    </ul>
+	  </div>
+	</nav>
+	<div class="row">
+	  <div class="col-sm-6">
+	    <div class="card">
+	      <div class="card-body">
+	        <h5 class="card-title">Исходный синсет:</h5>
+	        	<ul class="tags" style="font-size: 30px;">
+					<li><a href="index.html">Остров<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+					<li><a href="index.html">Суша<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+					<li><a href="index.html">Земля<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+				</ul>
+
+	        <div class="alert alert-info" role="alert">
+  				Если качество исходного синсета Вас не устраивает, или Вы считаете, что результат алгоритма содержит ошибки - используйте
+  				конструктор ниже, чтобы исправить неточности и нажмите кнопку <strong>Отправить</strong>, чтобы сохранить результат
+			</div>
+
+	      </div>
+	    </div>
+	  </div>
+	  <div class="col-sm-6">
+	    <div class="card">
+	      <div class="card-body">
+	        <h5 class="card-title">Обработанный алгоритмом синсет:</h5>
+	        	<ul class="tags green">
+					<li><a href="index.html">Остров<span></span></a></li>
+					<li><a href="index.html">Суша<span></span></a></li>
+				</ul>
+	       	<div class="alert alert-info" role="alert">
+	       		Если результат алгоритма корректен - нажмите на кнопку ниже
+			</div>
+	        <a href="#" class="btn btn-success">Подтвердить</a>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="card" style="margin-top: 40px; margin-left: 20px; margin-right: 20px;">
+	  <h5 class="card-header">Конструктор</h5>
+	  <div class="card-body">
+	  	<div class="row">
+	  		<div class="col-sm-6">
+	  			<div class="card">
+			      <div class="card-body">
+			      	<div class="alert alert-info" role="alert">Перетащите слова исходного синсета, которые действительно синонимичны</div>
+			        	<ul class="tags" style="font-size: 30px;">
+							<li><a href="index.html">Остров<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+							<li><a href="index.html">Суша<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+							<li><a href="index.html">Земля<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+						</ul>
+						<form class="form-inline">
+  							<label class="sr-only" for="inlineFormInput">Name</label>
+  							<input type="text" class="form-control mb-2 mr-sm-2 mb-sm-0" style="margin-left: 50px;" id="inlineFormInput" placeholder="Новый синоним">
+  							<button type="submit" class="btn btn-primary">Внести новое слово!</button>
+  						</form>
+			      </div>
+	    		</div>
+	  		</div>
+	  		<div class="col-sm-6">
+	  			<div class="card">
+			      <div class="card-body">
+			      	<div class="alert alert-success" role="alert">Новый синсет:</div>
+			        	<ul class="tags" style="font-size: 30px;">
+							<li><a href="index.html">Остров<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+							<li><a href="index.html">Суша<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+							<li><a href="index.html">Земля<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+						</ul>
+			      </div>
+			      <div class="alert alert-warning" role='alert' style="margin-left: 20px; margin-right: 20px;">
+			      		<p>Добавленные вами:</p>
+			      	<ul class="tags green">
+					<li><a href="index.html">Остров<span></span></a></li>
+					<li><a href="index.html">Суша<span></span></a></li>
+				  </ul>
+			      </div>
+	    		</div>
+	  		</div>
+	  	</div>
+	  	<a href="#" class="btn btn-primary" style="margin-top: 10px; margin-left: 84%;">Подтвердить действие!</a>
+	  </div>
+	</div>
+
+</body>
+</html>
