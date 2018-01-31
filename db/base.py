@@ -62,12 +62,18 @@ class Synset(Base):
     __tablename__ = 'synset'
     id = Column(Integer, primary_key=True)
     synset = Column(String)
+    grammar = Column(String)
+    domain = Column(String)
+    yarn_id = Column(Integer)
 
-    def __init__(self, synset):
+    def __init__(self, synset, grammar, domain, yarn_id):
         '''
         :param synset: строка, представляющая synset
         '''
         self.synset = synset
+        self.grammar = grammar
+        self.domain = domain
+        self.yarn_id = yarn_id
 
 
 class SynsetWord(Base):
@@ -75,10 +81,12 @@ class SynsetWord(Base):
     id = Column(Integer, primary_key=True)
     synset_id = Column(Integer, ForeignKey('synset.id'))
     word = Column(String)
+    word_id = Column(Integer, ForeignKey('word.id'))
 
-    def __init__(self, synset_id, word):
+    def __init__(self, synset_id, word, word_id):
         self.synset_id = synset_id
         self.word = word
+        self.word_id = word_id
 
 
 class Edition(Base):

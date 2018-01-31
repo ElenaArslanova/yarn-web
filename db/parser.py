@@ -1,8 +1,9 @@
 import json
+import csv
 import tqdm
 
 from db.alchemy import Alchemy
-from db.base import Word, Definition, WordDefinitionRelation
+from db.base import Word, Definition, WordDefinitionRelation, Synset, SynsetWord
 
 
 alchemy = Alchemy(path='data.db')
@@ -43,9 +44,33 @@ def create_from_dictionary(path, session_add_bound):
     session.commit()
 
 
+def create_synsets(csv_path, session_add_bound):
+    session_counter = 0
+    synset_index = 1
+    words_buffer = []
+    session = alchemy.get_session()
+    with open(csv_path) as f:
+        reader = csv.DictReader(f, delimiter=',')
+        for row in tqdm.tqdm(reader):
+            if session_counter == session_add_bound:
+                session.commit()
+                for s_id, word in words_buffer:
+                    word_object = session.query(Word).filter(Word.word == word).first()
+                    word_id = word_object.id if word_object else None
+                    session.add(SynsetWord(s_id, word, word_id))
+                words_buffer.clear()
+                session_counter = 0
+            words_buffer.extend((synset_index, word) for word in row['words'].split(';'))
+            session.add(Synset(row['words'], row['grammar'], row['domain'], row['id']))
+            session_counter += 1
+            synset_index += 1
+    session.commit()
+
+
 if __name__ == '__main__':
     create_from_dictionary('dicts/ru.wikt_final.json', 100)
-    # s = alchemy.get_session()
+    create_synsets('yarn-synsets.csv', 100)
+
     # for q in s.query(Word).filter(Word.word == 'отпор').all():
     #     print(q.id, q.word)
     # for q in s.query(Definition).filter(Definition.id == 91180).all():
