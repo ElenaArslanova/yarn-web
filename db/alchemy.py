@@ -52,6 +52,7 @@ class Alchemy:
                     syn[k] = [v]
             syn.update((x, None) for x in raw_syn - syn.keys())
             request.append(syn)
+
         return request
 
 

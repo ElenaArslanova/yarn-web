@@ -41,6 +41,7 @@ class Model(metaclass=abc.ABCMeta):
                 second_def = [definitions[j]] if type(definitions[j]) != list else definitions[j]
                 matrix[i, j] = scorer(first_def, second_def)
                 matrix[j, i] = matrix[i, j]
+                
         return matrix
 
     def strict_similarity(self, first, second) -> float:
