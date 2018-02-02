@@ -16,7 +16,7 @@ class Alchemy:
     def get_session(self):
         return self.__session
 
-    def get_synset_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> List[Dict[str, List[str]]]:
+    def get_synsets_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> List[Dict[str, List[str]]]:
         """
         :param synset_id_range: диапозон id синсетов, которые нужно вернуть с их определениями
         :return: возвращает лист словарей,  где в каждом словаре:
@@ -55,7 +55,16 @@ class Alchemy:
 
         return request
 
+    def get_synset_definitions(self, synset_id: int):
+        """
+        частный случай запроса ко всем синсетам
+        :param synset_id: id синсета из базы
+        :return: словарь, в котором ключи - слова из синсета, значения - листы из определений для слов
+        """
+        return self.get_synsets_definitions((synset_id, synset_id))[0]
+
 
 if __name__ == '__main__':
-    a = Alchemy()
-    print(a.get_synset_definitions((1, 3)))
+    # a = Alchemy()
+    # print(a.get_synset_definitions(1))
+    pass

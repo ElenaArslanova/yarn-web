@@ -5,6 +5,7 @@ from typing import List, Tuple
 import numpy as np
 
 from db.alchemy import Alchemy
+from models.metrics import general_metric
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -16,11 +17,11 @@ class Model(metaclass=abc.ABCMeta):
         """
         self.__threshold = threshold
         self.__metric = metric
-        self.__connection = Alchemy()
+        self.__connection = Alchemy(path='../db/data.db')
 
-    def __create_matrix(self, pair: Tuple[List[str], List[str]], multiple_meaning_strategy: str = 'closest'):
+    def __create_matrix(self, pair: List[Tuple[str, List[str]]], multiple_meaning_strategy: str = 'closest'):
         """
-        :param pair: кортеж из двух массивов: массив слов и массив определений
+        :param pair: лист из кортежей вида: слово - лист определений
         :param multiple_meaning_strategy: что делать с многозначными словами, какое определение выбирать.
         :return: матрицу, где [i, j] - похожесть i-го определения слова на j-ое определение
         """
@@ -29,28 +30,30 @@ class Model(metaclass=abc.ABCMeta):
         else:
             scorer = self.strict_similarity
 
-        words, definitions = pair
-        length = len(words)
+        length = len(pair)
         matrix = np.zeros((length, length))
+        viewed_elements = np.zeros((length, length), dtype=bool)
+
         for i in range(length):
             for j in range(length):
-                if i == j or matrix[i, j] != 0:
+                if i == j or viewed_elements[i, j]:
                     continue
 
-                first_def = [definitions[i]] if type(definitions[i]) != list else definitions[i]
-                second_def = [definitions[j]] if type(definitions[j]) != list else definitions[j]
-                matrix[i, j] = scorer(first_def, second_def)
+                matrix[i, j] = scorer(pair[i], pair[j])
                 matrix[j, i] = matrix[i, j]
-                
+                viewed_elements[i, j], viewed_elements[i, j] = True, True
+
         return matrix
 
-    def strict_similarity(self, first, second) -> float:
+    def strict_similarity(self, first: Tuple[str, List[str]], second: Tuple[str, List[str]]) -> float:
         """
-        :param first: лист из определений
+        :param first: кортеж из слова и листа определений к нему
         :param second: как и first
         :return: возвращает самую большую схожесть между определениями по метрике из first и second
         """
-        return max(map(lambda *args: self.__metric(*args), itertools.permutations(first, second)))
+        w1, ds1 = first
+        w2, ds2 = second
+        return max(map(lambda x: self.__metric(w1, w2, x[0], x[1]), itertools.product(ds1, ds2)))
 
     @abc.abstractmethod
     def _matrix_processing(self, matrix) -> List[int]:
@@ -62,9 +65,30 @@ class Model(metaclass=abc.ABCMeta):
         """
         pass
 
-    def clean(self, synset_id: int) -> Tuple[List, List]:
+    def clean(self, synset_id: int, missing_words_strategy: str = 'add_auto') -> Tuple[List, List]:
         """
         :param synset_id: id синсета в базе
+        :param missing_words_strategy: определяет стратегию работы со словами, для которых нет определений в словаре
         :return: два листа: synset - слова, которые включены и dropped - лишние
         """
+        response = self.__connection.get_synset_definitions(synset_id)
+
+        if missing_words_strategy == 'add_auto':
+            pairs = [(k, v) for k, v in response.items() if v is not None]
+            print(pairs)
+            auto = [k for k, v in response.items() if v is None]
+            print([k for k, _ in pairs])
+            matrix = self.__create_matrix(pairs)
+            print(matrix)
+        else:
+            pass
+
+
+class MajorityRowModel(Model):
+    def _matrix_processing(self, matrix) -> List[int]:
         pass
+
+
+if __name__ == '__main__':
+    m = MajorityRowModel(0.4, general_metric)
+    m.clean(1)
