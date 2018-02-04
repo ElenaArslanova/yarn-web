@@ -31,5 +31,5 @@ def general_metric(w1: str, w2: str, d1: str, d2: str, sim_metric=jacard_metric,
     помощью pymorphy, функция
     :return:
     """
-    d1, d2 = simple_normalization_tokens(d1), simple_normalization_tokens(d2)
+    d1, d2 = processing(d1), processing(d2)
     return sim_metric(w1, w2, d1, d2)
