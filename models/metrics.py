@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional, Callable
 
-from models.processing import simple_normalization_tokens
+from models.processing import simple_normalization_tokens, tokenize
 
 
 def jacard_metric(w1, w2, d1: List[str], d2: List[str]) -> float:
@@ -34,7 +34,7 @@ def jacard_with_word_influence(w1, w2, d1: List[str], d2: List[str]) -> float:
 
 
 def general_metric(w1: str, w2: str, d1: str, d2: str, sim_metric=jacard_metric,
-                   processing=simple_normalization_tokens):
+                   processing: Optional[Callable[[str], List[str]]]=simple_normalization_tokens):
     """
     функция, которая должна использоваться везде при работе с метриками, обобщает поведение сравнения
     :param w1: слово, которому соответствует определение d1
@@ -46,5 +46,7 @@ def general_metric(w1: str, w2: str, d1: str, d2: str, sim_metric=jacard_metric,
     помощью pymorphy, функция
     :return:
     """
+    if not processing:
+        processing = tokenize
     d1, d2 = processing(d1), processing(d2)
     return sim_metric(w1, w2, d1, d2)
