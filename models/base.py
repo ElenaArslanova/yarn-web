@@ -15,7 +15,7 @@ class Model(metaclass=abc.ABCMeta):
         :param metric: функция, вычисляющая схожесть двух слов и возвращающая число в [0, 1]
         вид функции - metric(a, b) -> float
         """
-        self.__threshold = threshold
+        self._threshold = threshold
         self.__metric = metric
         self.__connection = Alchemy(path='../db/data.db')
 
@@ -55,7 +55,7 @@ class Model(metaclass=abc.ABCMeta):
         return max(map(lambda x: self.__metric(w1, w2, x[0], x[1]), itertools.product(ds1, ds2)))
 
     @abc.abstractmethod
-    def _matrix_processing(self, matrix) -> List[int]:
+    def _matrix_processing(self, matrix) -> np.ndarray:
         """
         функция для стратегии отбора слов, которые войдут в итоговый синсет
         :param matrix: матрица схожести определений слов на основании метрики
@@ -72,23 +72,39 @@ class Model(metaclass=abc.ABCMeta):
         :return: два листа: synset - слова, которые включены и dropped - лишние
         """
         response = self.__connection.get_synset_definitions(synset_id)
+        pairs = [(k, v) for k, v in response.items()]
 
         if missing_definitions_strategy == 'add_auto':
-            pairs = [(k, v) for k, v in response.items() if v is not None]
-            print(pairs)
-            auto = [k for k, v in response.items() if v is None]
-            print([k for k, _ in pairs])
-            matrix = self.__create_matrix(pairs)
-            print(matrix)
+            return self.__add_auto_strategy(pairs)
         else:
             pass
+            # TODO
+
+    def __add_auto_strategy(self, def_pairs: List[Tuple[str, List[str]]]) \
+            -> Tuple[List[str], List[str]]:
+        """
+        реализует повеение по умолчанию для тех слов, которых нет в словаре. Такие слова автоматически будут добавлены
+        в итоговый синсет.
+        :param def_pairs: лист из кортежей вида (w, List[d]), w - слово, List[d] - лист определений для w,
+        если определений нет - , то вместо List[d] для слова w в кортеже будет None
+        :return: возвращает два листа: synset - корректные синонимы и dropped - отфильтрованные алгоритмом
+        """
+        pairs = [(k, v) for k, v in def_pairs if v is not None]
+        auto = [k for k, v in def_pairs if v is None]
+        matrix = self.__create_matrix(pairs)
+        result_indexes = self._matrix_processing(matrix)
+        synset = [pairs[i][0] for i in result_indexes]
+        synset.extend(auto)
+        return synset, list(set(k for k, _ in pairs) - set(synset))
 
 
 class MajorityRowModel(Model):
-    def _matrix_processing(self, matrix) -> List[int]:
-        pass
+    def _matrix_processing(self, matrix) -> np.ndarray:
+        rows, _ = np.where(matrix >= self._threshold)
+        return np.unique(rows)
 
 
 if __name__ == '__main__':
     m = MajorityRowModel(0.4, general_metric)
-    m.clean(1)
+    r, w = m.clean(1)
+    print(r, w)
