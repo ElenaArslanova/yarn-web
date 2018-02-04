@@ -39,8 +39,7 @@ class Model(metaclass=abc.ABCMeta):
                 if i == j or viewed_elements[i, j]:
                     continue
 
-                matrix[i, j] = scorer(pair[i], pair[j])
-                matrix[j, i] = matrix[i, j]
+                matrix[i, j] = matrix[j, i] = scorer(pair[i], pair[j])
                 viewed_elements[i, j], viewed_elements[i, j] = True, True
 
         return matrix
@@ -65,15 +64,16 @@ class Model(metaclass=abc.ABCMeta):
         """
         pass
 
-    def clean(self, synset_id: int, missing_words_strategy: str = 'add_auto') -> Tuple[List, List]:
+    def clean(self, synset_id: int, missing_definitions_strategy: str = 'add_auto') -> Tuple[List, List]:
         """
         :param synset_id: id синсета в базе
-        :param missing_words_strategy: определяет стратегию работы со словами, для которых нет определений в словаре
+        :param missing_definitions_strategy:
+        определяет стратегию работы со словами, для которых нет определений в словаре
         :return: два листа: synset - слова, которые включены и dropped - лишние
         """
         response = self.__connection.get_synset_definitions(synset_id)
 
-        if missing_words_strategy == 'add_auto':
+        if missing_definitions_strategy == 'add_auto':
             pairs = [(k, v) for k, v in response.items() if v is not None]
             print(pairs)
             auto = [k for k, v in response.items() if v is None]
