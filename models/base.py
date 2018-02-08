@@ -1,11 +1,14 @@
 import itertools
 import abc
 from typing import List, Tuple
+from functools import partial
 
 import numpy as np
+import pandas as pd
 
 from db.alchemy import Alchemy
-from models.metrics import general_metric
+from models.metrics import general_metric, jacard_with_word_influence
+from models.processing import remove_stop_words_tokens
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -64,18 +67,18 @@ class Model(metaclass=abc.ABCMeta):
         """
         pass
 
-    def clean(self, synset_id: int, missing_definitions_strategy: str = 'add_auto') -> Tuple[List, List]:
+    def clean(self, ids_range: Tuple[int, int], missing_definitions_strategy: str = 'add_auto') \
+            -> List[Tuple[List, List]]:
         """
-        :param synset_id: id синсета в базе
+        :param ids_range: диапазон индексов из базы
         :param missing_definitions_strategy:
         определяет стратегию работы со словами, для которых нет определений в словаре
         :return: два листа: synset - слова, которые включены и dropped - лишние
         """
-        response = self.__connection.get_synset_definitions(synset_id)
-        pairs = [(k, v) for k, v in response.items()]
-
+        response = self.__connection.get_synsets_definitions(synset_id_range=ids_range)
+        pairs = map(lambda x: [(k, v) for k, v in x.items()], response)
         if missing_definitions_strategy == 'add_auto':
-            return self.__add_auto_strategy(pairs)
+            return list(map(lambda synset: self.__add_auto_strategy(synset), pairs))
         else:
             pass
             # TODO
@@ -89,6 +92,8 @@ class Model(metaclass=abc.ABCMeta):
         если определений нет - , то вместо List[d] для слова w в кортеже будет None
         :return: возвращает два листа: synset - корректные синонимы и dropped - отфильтрованные алгоритмом
         """
+        if len(def_pairs) == 1:
+            return [def_pairs[0][0]], []
         pairs = [(k, v) for k, v in def_pairs if v is not None]
         auto = [k for k, v in def_pairs if v is None]
         matrix = self.__create_matrix(pairs)
@@ -105,6 +110,10 @@ class MajorityRowModel(Model):
 
 
 if __name__ == '__main__':
-    m = MajorityRowModel(0.4, general_metric)
-    r, w = m.clean(1)
-    print(r, w)
+    metric = partial(general_metric, sim_metric=jacard_with_word_influence, processing=remove_stop_words_tokens)
+    m = MajorityRowModel(0.4, metric)
+    r = m.clean((14, 20))
+    for clean ,filtered in r:
+        print(clean, filtered)
+
+

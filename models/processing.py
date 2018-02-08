@@ -38,3 +38,4 @@ def remove_stop_words_tokens(definition: str,
     """
     tokens = normalize(definition) if normalize else tokenize(definition)
     return [x for x in tokens if x not in stopwords]
+
