@@ -18,7 +18,7 @@ class Alchemy:
 
     def get_synsets_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> List[Dict[str, List[str]]]:
         """
-        :param synset_id_range: диапозон id синсетов, которые нужно вернуть с их определениями
+        :param synset_id_range: диапазон id синсетов, которые нужно вернуть с их определениями
         :return: возвращает лист словарей,  где в каждом словаре:
         ключ - слово из синсета, значение - лист определений для данного слова из базы. Если слова нет в базе,
         то ему приписывается в виде определения None
@@ -28,31 +28,36 @@ class Alchemy:
         else:
             left, right = synset_id_range
 
-        synsets = self.__session.query(Synset, SynsetWord, Definition) \
+        relations = self.__session.query(Synset, SynsetWord, WordDefinitionRelation) \
             .filter(and_(Synset.id >= left, Synset.id <= right)) \
             .filter(Synset.id == SynsetWord.synset_id) \
-            .filter(WordDefinitionRelation.word_id == SynsetWord.word_id) \
-            .filter(Definition.id == WordDefinitionRelation.definition_id) \
+            .outerjoin(WordDefinitionRelation, WordDefinitionRelation.word_id == SynsetWord.word_id) \
             .all()
-        if not synsets:
-            return []
+        if not relations:
+            raise IndexError("synsets' ids are out of range")
 
-        ids = set(map(lambda x: x[0].id, synsets))
+        with_definition = set(relation[2].id for relation in relations if relation[2] is not None)
+        definitions = {d.id: d.definition
+                       for d in self.__session.query(Definition).filter(Definition.id.in_(with_definition)).all()} \
+            if with_definition else {}
+
+        syn_ids = set(relation[0].id for relation in relations)
 
         request = []
-        for id in ids:
-            by_condition = list(filter(lambda x: x[0].id == id, synsets))
-            synset_ = map(lambda x: (x[1].word, x[2].definition), by_condition)
-            raw_syn = set(list(map(lambda x: x[0].synset, by_condition))[0].split(';'))
-            syn = dict()
-            for k, v in synset_:
-                if k in syn:
-                    syn[k].append(v)
+        for id in sorted(syn_ids):
+            relations_filtered = [r for r in relations if r[0].id == id]
+            syn = {}
+            for r in relations_filtered:
+                word = r[1].word
+                if r[2]:
+                    definition = definitions[r[2].id]
+                    if word in syn:
+                        syn[word].append(definition)
+                    else:
+                        syn[word] = [definition]
                 else:
-                    syn[k] = [v]
-            syn.update((x, None) for x in raw_syn - syn.keys())
+                    syn[word] = None
             request.append(syn)
-
         return request
 
     def get_synset_definitions(self, synset_id: int):
