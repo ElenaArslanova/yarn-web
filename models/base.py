@@ -1,6 +1,7 @@
 import itertools
 import abc
-from typing import List, Tuple
+from collections import OrderedDict
+from typing import List, Tuple, Dict
 from functools import partial
 
 import numpy as np
@@ -20,7 +21,6 @@ class Model(metaclass=abc.ABCMeta):
         """
         self._threshold = threshold
         self.__metric = metric
-        self.__connection = Alchemy(path='../db/data.db')
 
     def __create_matrix(self, pair: List[Tuple[str, List[str]]], multiple_meaning_strategy: str = 'closest'):
         """
@@ -67,16 +67,15 @@ class Model(metaclass=abc.ABCMeta):
         """
         pass
 
-    def clean(self, ids_range: Tuple[int, int], missing_definitions_strategy: str = 'add_auto') \
+    def clean(self, synset_definitions: List[Dict[str, List[str]]], missing_definitions_strategy: str = 'add_auto') \
             -> List[Tuple[List, List]]:
         """
-        :param ids_range: диапазон индексов из базы
+        :param synset_definitions:
         :param missing_definitions_strategy:
         определяет стратегию работы со словами, для которых нет определений в словаре
         :return: два листа: synset - слова, которые включены и dropped - лишние
         """
-        response = self.__connection.get_synsets_definitions(synset_id_range=ids_range)
-        pairs = map(lambda x: [(k, v) for k, v in x.items()], response)
+        pairs = map(lambda x: [(k, v) for k, v in x.items()], synset_definitions)
         if missing_definitions_strategy == 'add_auto':
             return list(map(lambda synset: self.__add_auto_strategy(synset), pairs))
         else:
@@ -112,8 +111,20 @@ class MajorityRowModel(Model):
 if __name__ == '__main__':
     metric = partial(general_metric, sim_metric=jacard_with_word_influence, processing=remove_stop_words_tokens)
     m = MajorityRowModel(0.4, metric)
-    r = m.clean((14, 20))
-    for clean ,filtered in r:
-        print(clean, filtered)
-
-
+    alchemy = Alchemy(path='../db/data.db')
+    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((500, 600))
+    answers = m.clean(synset_definitions)
+    filtered = []
+    dropped = []
+    source = []
+    id = []
+    for idx, answer in zip(yarn_ids, answers):
+        clean, dirty = answer
+        filtered.append(';'.join(clean))
+        dropped.append(';'.join(dirty))
+        clean.extend(dirty)
+        source.append(';'.join(clean))
+        id.append(idx)
+    frame = pd.DataFrame(OrderedDict({'yarn_id': id, 'исходный синсет': source, 'отфильтрованный': filtered,
+                                      'остальное': dropped}))
+    frame.to_csv('batch.csv', encoding='utf-8')

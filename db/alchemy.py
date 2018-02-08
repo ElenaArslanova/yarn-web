@@ -16,12 +16,14 @@ class Alchemy:
     def get_session(self):
         return self.__session
 
-    def get_synsets_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> List[Dict[str, List[str]]]:
+    def get_synsets_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> Tuple[List[int],
+                                                                                        List[Dict[str, List[str]]]]:
         """
         :param synset_id_range: диапазон id синсетов, которые нужно вернуть с их определениями
         :return: возвращает лист словарей,  где в каждом словаре:
         ключ - слово из синсета, значение - лист определений для данного слова из базы. Если слова нет в базе,
-        то ему приписывается в виде определения None
+        то ему приписывается в виде определения None. Также возвращается лист идентификаторов yarn_id для каждого
+        синсета
         """
         if len(synset_id_range) == 1:
             left, right = synset_id_range[0], synset_id_range[0]
@@ -35,7 +37,7 @@ class Alchemy:
             .all()
         if not relations:
             raise IndexError("synsets' ids are out of range")
-
+        yarn_ids = sorted(set(x[0].yarn_id for x in relations))
         with_definition = set(relation[2].id for relation in relations if relation[2] is not None)
         definitions = {d.id: d.definition
                        for d in self.__session.query(Definition).filter(Definition.id.in_(with_definition)).all()} \
@@ -58,7 +60,7 @@ class Alchemy:
                 else:
                     syn[word] = None
             request.append(syn)
-        return request
+        return yarn_ids, request
 
     def get_synset_definitions(self, synset_id: int):
         """
