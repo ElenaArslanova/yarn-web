@@ -1,9 +1,9 @@
-from sqlalchemy import create_engine, or_, and_, desc
-from sqlalchemy.orm import sessionmaker
-from collections import OrderedDict
-import datetime
+from typing import Dict, List, Tuple
 
-from db.base import Base, Word, User, Synonym, Edition, Synset
+from sqlalchemy import create_engine, and_
+from sqlalchemy.orm import sessionmaker
+
+from db.base import Base, Word, User, Synonym, Edition, Synset, SynsetWord, Definition, WordDefinitionRelation
 
 
 class Alchemy:
@@ -16,4 +16,62 @@ class Alchemy:
     def get_session(self):
         return self.__session
 
+    def get_synsets_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> Tuple[List[int],
+                                                                                        List[Dict[str, List[str]]]]:
+        """
+        :param synset_id_range: диапазон id синсетов, которые нужно вернуть с их определениями
+        :return: возвращает лист словарей,  где в каждом словаре:
+        ключ - слово из синсета, значение - лист определений для данного слова из базы. Если слова нет в базе,
+        то ему приписывается в виде определения None. Также возвращается лист идентификаторов yarn_id для каждого
+        синсета
+        """
+        if len(synset_id_range) == 1:
+            left, right = synset_id_range[0], synset_id_range[0]
+        else:
+            left, right = synset_id_range
 
+        relations = self.__session.query(Synset, SynsetWord, WordDefinitionRelation) \
+            .filter(and_(Synset.id >= left, Synset.id <= right)) \
+            .filter(Synset.id == SynsetWord.synset_id) \
+            .outerjoin(WordDefinitionRelation, WordDefinitionRelation.word_id == SynsetWord.word_id) \
+            .all()
+        if not relations:
+            raise IndexError("synsets' ids are out of range")
+        yarn_ids = sorted(set(x[0].yarn_id for x in relations))
+        with_definition = set(relation[2].id for relation in relations if relation[2] is not None)
+        definitions = {d.id: d.definition
+                       for d in self.__session.query(Definition).filter(Definition.id.in_(with_definition)).all()} \
+            if with_definition else {}
+
+        syn_ids = set(relation[0].id for relation in relations)
+
+        request = []
+        for id in sorted(syn_ids):
+            relations_filtered = [r for r in relations if r[0].id == id]
+            syn = {}
+            for r in relations_filtered:
+                word = r[1].word
+                if r[2]:
+                    definition = definitions[r[2].id]
+                    if word in syn:
+                        syn[word].append(definition)
+                    else:
+                        syn[word] = [definition]
+                else:
+                    syn[word] = None
+            request.append(syn)
+        return yarn_ids, request
+
+    def get_synset_definitions(self, synset_id: int):
+        """
+        частный случай запроса ко всем синсетам
+        :param synset_id: id синсета из базы
+        :return: словарь, в котором ключи - слова из синсета, значения - листы из определений для слов
+        """
+        return self.get_synsets_definitions((synset_id, synset_id))[0]
+
+
+if __name__ == '__main__':
+    # a = Alchemy()
+    # print(a.get_synset_definitions(1))
+    pass
