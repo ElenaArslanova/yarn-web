@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>YARN</title>
+	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  	<link rel="stylesheet" type="text/css" href="../css/synsets.css">
+  	<link rel="stylesheet" type="text/css" href="../css/tag.css">
+</head>
+
+<body>
+	<nav class="navbar navbar-inverse">
+	  <div class="container-fluid">
+	    <div class="navbar-header">
+	      <a class="navbar-brand" href="#">yarn-Web Checker</a>
+	    </div>
+	    <ul class="nav navbar-nav">
+	      <li class="active"><a href="#">Главная</a></li>
+	      <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Править<span class="caret"></span></a>
+	        <ul class="dropdown-menu">
+	          <li><a href="#">Коллекция синсетов</a></li>
+	          <li><a href="#">Одиночный синсет</a></li>
+	        </ul>
+	      </li>
+	      <li><a href="#">Обновления</a></li>
+	    </ul>
+	  </div>
+	</nav>
+	<div class="container">
+		<table class="table table-condensed" style="margin: auto; width: 90%">
+			<thead>
+				<tr>
+					<th></th>
+					<th style="text-align: center;">Синсет</th>
+					<th style="text-align: right;">Подтвердить</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><i class="fa fa-check" aria-hidden="true"></i></td>
+					<td>
+						<ul>
+							<li onclick="changeWordState(event)" class=" el green-box">Максим</li>
+							<li onclick="changeWordState(event)" class="el red-box">Елена</li>
+							<li onclick="changeWordState(event)" class="el green-box">Хомка</li>
+						</ul>
+					</td>
+					<td>
+						<button type="button" class="btn btn-primary" style="float: right;" onclick="submitting(event)">Submit</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	
+</body>
+<script type="text/javascript">
+
+	function changeWordState(event) {
+		var element = event.target;
+		changeElementBackgroundColor(element);
+		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[0];
+		$(statusIcon).css("color", "red");
+	}
+
+	function changeElementBackgroundColor(element) {
+		var elemTargetClass = element.classList[1];
+		if ("green-box" === elemTargetClass)
+			$(element).removeClass("green-box").addClass("red-box");
+		else
+			$(element).removeClass("red-box").addClass("green-box");
+	}
+
+	function submitting(event) {
+		// ассинхронная логика отправки данных на сервер, TODO
+		var element = event.target;
+		var statusIcon = getPreviousSiblings(element.parentElement)[1];
+		$(statusIcon).css("color", "green");
+	}
+
+	function getPreviousSiblings(elem) {
+    var sibs = [];
+    while (elem = elem.previousSibling) {
+        if (elem.nodeType === 3) continue; // text node
+        sibs.push(elem);
+    }
+    return sibs;
+	}	
+
+
+</script>
+</html>
