@@ -30,75 +30,67 @@
 	    </ul>
 	  </div>
 	</nav>
-
 	<div class="container">
-		<table class="table table-condensed">
+		<table class="table table-condensed" style="margin: auto; width: 90%">
 			<thead>
 				<tr>
-					<th>Синсет</th>
-					<th>Результат Алгоритма</th>
 					<th></th>
-					<th></th>
+					<th style="text-align: center;">Синсет</th>
+					<th style="text-align: right;">Подтвердить</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td>
-						<ul class="tags">
-							<li><a href="index.html">Остров<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Суша<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Земля<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-						</ul>
-					</td>
-					<td>
-						<ul class="tags green">
-							<li><a href="index.html">Остров<span></span></a></li>
-							<li><a href="index.html">Суша<span></span></a></li>
-						</ul>
-					</td>
 					<td><i class="fa fa-check" aria-hidden="true"></i></td>
-					<td><i class="fa fa-times" aria-hidden="true"></i></td>
-				</tr>
-				<tr>
 					<td>
-						<ul class="tags">
-							<li><a href="index.html">Машина<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Кабриолет<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Ровер<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
+						<ul>
+							<li onclick="changeWordState(event)" class=" el green-box">Максим</li>
+							<li onclick="changeWordState(event)" class="el red-box">Елена</li>
+							<li onclick="changeWordState(event)" class="el green-box">Хомка</li>
 						</ul>
 					</td>
 					<td>
-						<ul class="tags green">
-							<li><a href="index.html">Машина<span></span></a></li>
-						</ul>
+						<button type="button" class="btn btn-primary" style="float: right;" onclick="submitting(event)">Submit</button>
 					</td>
-					<td><i class="fa fa-check" aria-hidden="true"></i></td>
-					<td><i class="fa fa-times" aria-hidden="true"></i></td>
-				</tr>
-				<tr>
-					<td>
-						<ul class="tags">
-							<li><a href="index.html">Клуб<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Команда<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Состав<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Друзья<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-							<li><a href="index.html">Одноклубники<span><i class="fa fa-info" aria-hidden="true"></i></span></a></li>
-						</ul>
-					</td>
-					<td>
-						<ul class="tags green">
-							<li><a href="index.html">Команда<span></span></a></li>
-							<li><a href="index.html">Состав<span></span></a></li>
-							<li><a href="index.html">Одноклубники<span></span></a></li>
-
-						</ul>
-					</td>
-					<td><i class="fa fa-check" aria-hidden="true"></i></td>
-					<td><i class="fa fa-times" aria-hidden="true"></i></td>
 				</tr>
 			</tbody>
 		</table>
 	</div>
 	
 </body>
+<script type="text/javascript">
+
+	function changeWordState(event) {
+		var element = event.target;
+		changeElementBackgroundColor(element);
+		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[0];
+		$(statusIcon).css("color", "red");
+	}
+
+	function changeElementBackgroundColor(element) {
+		var elemTargetClass = element.classList[1];
+		if ("green-box" === elemTargetClass)
+			$(element).removeClass("green-box").addClass("red-box");
+		else
+			$(element).removeClass("red-box").addClass("green-box");
+	}
+
+	function submitting(event) {
+		// ассинхронная логика отправки данных на сервер, TODO
+		var element = event.target;
+		var statusIcon = getPreviousSiblings(element.parentElement)[1];
+		$(statusIcon).css("color", "green");
+	}
+
+	function getPreviousSiblings(elem) {
+    var sibs = [];
+    while (elem = elem.previousSibling) {
+        if (elem.nodeType === 3) continue; // text node
+        sibs.push(elem);
+    }
+    return sibs;
+	}	
+
+
+</script>
 </html>
