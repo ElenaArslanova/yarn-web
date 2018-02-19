@@ -46,7 +46,7 @@
 						<td><i class="fa fa-check" aria-hidden="true"></i></td>
 						<td><span style="margin-left:10px;">{{syn.get('id')}}</span></td>
 						<td style="line-height:2;">
-							<ul>
+							<ul id="syn-{{syn.get('id')}}">
 								%for wq in syn.get('answer'):
 									%if wq.status == 'correct':
 										<li onclick="changeWordState(event)" class=" el green-box">{{wq.word}}</li>
@@ -59,7 +59,7 @@
 							</ul>
 						</td>
 						<td>
-							<button type="button" class="btn btn-primary" style="float: right;" onclick="submitting(event)">Submit</button>
+							<button type="button" class="btn btn-primary syn-{{syn.get('id')}}" style="float: right;" onclick="submitting(event)">Submit</button>
 						</td>
 					</tr>
 				%end
@@ -68,12 +68,13 @@
 	</div>
 	
 </body>
+<script type="text/javascript" src="../js/handlingchanges.js"></script>
 <script type="text/javascript">
 
 	function changeWordState(event) {
 		var element = event.target;
-		changeElementBackgroundColor(element);
 		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[1];
+		changeElementBackgroundColor(element);
 		$(statusIcon).css("color", "red");
 	}
 
@@ -89,6 +90,8 @@
 		// ассинхронная логика отправки данных на сервер, TODO
 		var element = event.target;
 		var statusIcon = getPreviousSiblings(element.parentElement)[2];
+		var toServeRresult = bag.getSynsetResults(document.getElementById(element.classList[2]));
+		console.log(toServeRresult);
 		$(statusIcon).css("color", "green");
 	}
 
@@ -100,7 +103,5 @@
     }
     return sibs;
 	}	
-
-
 </script>
 </html>
