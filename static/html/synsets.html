@@ -35,6 +35,7 @@
 			<thead>
 				<tr>
 					<th></th>
+					<th style="text-align: center;">yarn-id</th>
 					<th style="text-align: center;">Синсет</th>
 					<th style="text-align: right;">Подтвердить</th>
 				</tr>
@@ -42,7 +43,8 @@
 			<tbody>
 				<tr>
 					<td><i class="fa fa-check" aria-hidden="true"></i></td>
-					<td>
+					<td style="text-align: center;">13</td>
+					<td style="text-align: center;">
 						<ul>
 							<li onclick="changeWordState(event)" class=" el green-box">Максим</li>
 							<li onclick="changeWordState(event)" class="el red-box">Елена</li>
@@ -63,7 +65,7 @@
 	function changeWordState(event) {
 		var element = event.target;
 		changeElementBackgroundColor(element);
-		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[0];
+		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[1];
 		$(statusIcon).css("color", "red");
 	}
 
@@ -78,7 +80,7 @@
 	function submitting(event) {
 		// ассинхронная логика отправки данных на сервер, TODO
 		var element = event.target;
-		var statusIcon = getPreviousSiblings(element.parentElement)[1];
+		var statusIcon = getPreviousSiblings(element.parentElement)[2];
 		$(statusIcon).css("color", "green");
 	}
 
