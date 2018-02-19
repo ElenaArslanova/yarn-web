@@ -35,7 +35,7 @@
 			<thead>
 				<tr>
 					<th></th>
-					<th style="text-align: center;">yarn-id</th>
+					<th style="text-align: center;">id</th>
 					<th style="text-align: center;">Синсет</th>
 					<th style="text-align: right;">Подтвердить</th>
 				</tr>
@@ -44,8 +44,8 @@
 				%for syn in synsets:
 					<tr>
 						<td><i class="fa fa-check" aria-hidden="true"></i></td>
-						<td style="text-align: center;">{{syn.get('id')}}</td>
-						<td style="text-align: center;">
+						<td><span style="margin-left:10px;">{{syn.get('id')}}</span></td>
+						<td style="line-height:2;">
 							<ul>
 								%for wq in syn.get('answer'):
 									%if wq.status == 'correct':
