@@ -41,20 +41,28 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td><i class="fa fa-check" aria-hidden="true"></i></td>
-					<td style="text-align: center;">13</td>
-					<td style="text-align: center;">
-						<ul>
-							<li onclick="changeWordState(event)" class=" el green-box">Максим</li>
-							<li onclick="changeWordState(event)" class="el red-box">Елена</li>
-							<li onclick="changeWordState(event)" class="el green-box">Хомка</li>
-						</ul>
-					</td>
-					<td>
-						<button type="button" class="btn btn-primary" style="float: right;" onclick="submitting(event)">Submit</button>
-					</td>
-				</tr>
+				%for syn in synsets:
+					<tr>
+						<td><i class="fa fa-check" aria-hidden="true"></i></td>
+						<td style="text-align: center;">{{syn.get('id')}}</td>
+						<td style="text-align: center;">
+							<ul>
+								%for wq in syn.get('answer'):
+									%if wq.status == 'correct':
+										<li onclick="changeWordState(event)" class=" el green-box">{{wq.word}}</li>
+									%end
+
+									%if wq.status == 'incorrect':
+										<li onclick="changeWordState(event)" class="el red-box">{{wq.word}}</li>
+									%end
+								%end
+							</ul>
+						</td>
+						<td>
+							<button type="button" class="btn btn-primary" style="float: right;" onclick="submitting(event)">Submit</button>
+						</td>
+					</tr>
+				%end
 			</tbody>
 		</table>
 	</div>
