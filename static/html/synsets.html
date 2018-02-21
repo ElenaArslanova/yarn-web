@@ -91,8 +91,18 @@
 		var element = event.target;
 		var statusIcon = getPreviousSiblings(element.parentElement)[2];
 		var toServeRresult = bag.getSynsetResults(document.getElementById(element.classList[2]));
-		console.log(toServeRresult);
-		$(statusIcon).css("color", "green");
+		$.ajax({
+        type: "POST",
+        //the url where you want to sent the userName and password to
+        url: '/receive_edition',
+        contentType: "application/json; charset=utf-8",
+        dataType: 'json',
+        async: true,
+        //json object to sent to the authentication url
+        data: JSON.stringify(toServeRresult),
+    }).done(function(res) {
+    	$(statusIcon).css("color", "green");
+    })
 	}
 
 	function getPreviousSiblings(elem) {

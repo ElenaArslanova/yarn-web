@@ -11,6 +11,8 @@ function BagOfElements() {
 			else
 				wrong.push(children[i].textContent);
 		}
+		correct = correct.join(';');
+		wrong = wrong.join(';');
 		return {'correct' : correct, 'wrong' : wrong, 'id' : parentElement.id};
 	}
 }
