@@ -10,6 +10,7 @@ import pandas as pd
 from db.alchemy import Alchemy
 from models.metrics import general_metric, jacard_with_word_influence
 from models.processing import remove_stop_words_tokens
+from models.utils import results_as_dict
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -112,19 +113,22 @@ if __name__ == '__main__':
     metric = partial(general_metric, sim_metric=jacard_with_word_influence, processing=remove_stop_words_tokens)
     m = MajorityRowModel(0.4, metric)
     alchemy = Alchemy(path='../db/data.db')
-    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((500, 600))
+    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((500, 505))
     answers = m.clean(synset_definitions)
-    filtered = []
-    dropped = []
-    source = []
-    id = []
-    for idx, answer in zip(yarn_ids, answers):
-        clean, dirty = answer
-        filtered.append(';'.join(clean))
-        dropped.append(';'.join(dirty))
-        clean.extend(dirty)
-        source.append(';'.join(clean))
-        id.append(idx)
-    frame = pd.DataFrame(OrderedDict({'yarn_id': id, 'исходный синсет': source, 'отфильтрованный': filtered,
-                                      'остальное': dropped}))
-    frame.to_csv('batch.csv', encoding='utf-8')
+    print(answers)
+    # filtered = []
+    # dropped = []
+    # source = []
+    # id = []
+    # for idx, answer in zip(yarn_ids, answers):
+    #     clean, dirty = answer
+    #     filtered.append(';'.join(clean))
+    #     dropped.append(';'.join(dirty))
+    #     clean.extend(dirty)
+    #     source.append(';'.join(clean))
+    #     id.append(idx)
+    # frame = pd.DataFrame(OrderedDict({'yarn_id': id, 'исходный синсет': source, 'отфильтрованный': filtered,
+    #                                   'остальное': dropped}))
+    # frame.to_csv('batch.csv', encoding='utf-8')
+    print('-------')
+    print(results_as_dict(yarn_ids, answers))

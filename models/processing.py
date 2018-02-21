@@ -6,7 +6,7 @@ from pymorphy2 import analyzer
 
 morph = analyzer.MorphAnalyzer()
 
-with open('stopwords.txt') as f:
+with open('models/stopwords.txt') as f:
     stopwords = set(f.read().split())
 
 

@@ -70,6 +70,19 @@ class Alchemy:
         """
         return self.get_synsets_definitions((synset_id, synset_id))[0]
 
+    def get_word_definitions(self, word: str) -> List[str]:
+        """
+        принимает слово и возвращает все имеющиеся в базе определения
+        :param word: слово
+        :return: список определений слова
+        """
+        definitions = self.__session.query(Definition.definition).filter(Word.word == 'дом') \
+            .filter(Word.id == WordDefinitionRelation.word_id) \
+            .filter(WordDefinitionRelation.definition_id == Definition.id).all()
+        if not definitions:
+            return []
+        return [x[0] for x in definitions]
+
 
 if __name__ == '__main__':
     # a = Alchemy()
