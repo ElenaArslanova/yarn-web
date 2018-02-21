@@ -76,7 +76,7 @@ class Alchemy:
         :param word: слово
         :return: список определений слова
         """
-        definitions = self.__session.query(Definition.definition).filter(Word.word == 'дом') \
+        definitions = self.__session.query(Definition.definition).filter(Word.word == word) \
             .filter(Word.id == WordDefinitionRelation.word_id) \
             .filter(WordDefinitionRelation.definition_id == Definition.id).all()
         if not definitions:

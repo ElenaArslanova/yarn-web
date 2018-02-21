@@ -49,11 +49,11 @@
 							<ul id="syn-{{syn.get('id')}}">
 								%for wq in syn.get('answer'):
 									%if wq.status == 'correct':
-										<li onclick="changeWordState(event)" class=" el green-box">{{wq.word}}</li>
+										<li onclick="changeWordState(event)" oncontextmenu="loadefs(event)" class=" el green-box">{{wq.word}}</li>
 									%end
 
 									%if wq.status == 'incorrect':
-										<li onclick="changeWordState(event)" class="el red-box">{{wq.word}}</li>
+										<li onclick="changeWordState(event)" oncontextmenu="loadefs(event)" class="el red-box">{{wq.word}}</li>
 									%end
 								%end
 							</ul>
@@ -65,6 +65,17 @@
 				%end
 			</tbody>
 		</table>
+	</div>
+	<div id="myModal" class="modal">
+	  <!-- Modal content -->
+	  <div class="modal-content">
+	  	<span class="close">&times;</span>
+	  	<!--Контент -->
+	  	<p id='modal-word'>Word</p>
+	  	<ul id='modal-def' class="list-group">
+	  		
+	  	</ul>
+	  </div>
 	</div>
 	
 </body>
@@ -93,12 +104,10 @@
 		var toServeRresult = bag.getSynsetResults(document.getElementById(element.classList[2]));
 		$.ajax({
         type: "POST",
-        //the url where you want to sent the userName and password to
         url: '/receive_edition',
         contentType: "application/json; charset=utf-8",
         dataType: 'json',
         async: true,
-        //json object to sent to the authentication url
         data: JSON.stringify(toServeRresult),
     }).done(function(res) {
     	$(statusIcon).css("color", "green");
@@ -113,5 +122,35 @@
     }
     return sibs;
 	}	
+</script>
+<script type="text/javascript">
+	var modal = document.getElementById('myModal');
+	var span = document.getElementsByClassName("close")[0];
+	function loadefs(event) {
+		event.preventDefault();
+		var targetWord = document.getElementById('modal-word');
+		var targetList = document.getElementById('modal-def');
+		$(targetWord).text(event.target.textContent);
+		$(targetList).empty();
+		var word = {'word' : event.target.textContent};
+		modal.style.display = 'block';
+		$.ajax({
+			type: 'POST',
+			url: 'word_definition',
+			contentType: "application/json; charset=utf-8",
+			dataType: 'json',
+			async: true,
+			data: JSON.stringify(word)
+		}).done(function(response) {
+			for (var i=0; i < response.length; i++) {
+				$(targetList).append('<li class="list-group-item">' + response[i] + '</li>')
+			}
+		})
+	}
+
+	span.onclick = function() {
+		modal.style.display = 'none';
+	}
+
 </script>
 </html>
