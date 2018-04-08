@@ -68,7 +68,7 @@ class Alchemy:
         :param synset_id: id синсета из базы
         :return: словарь, в котором ключи - слова из синсета, значения - листы из определений для слов
         """
-        return self.get_synsets_definitions((synset_id, synset_id))[0]
+        return self.get_synsets_definitions((synset_id, synset_id))
 
     def get_word_definitions(self, word: str) -> List[str]:
         """
@@ -83,8 +83,23 @@ class Alchemy:
             return []
         return [x[0] for x in definitions]
 
+    def get_words_definitions(self, words: List[str]):
+        result = {}
+        for word in words:
+            definitions = self.get_word_definitions(word)
+            if not definitions:
+                result[word] = None
+            else:
+                result[word] = definitions
+        return result
+
+    def get_concatenated_synsets_by_yarn_ids(self, yarnd_ids: List[int]):
+        result = set()
+        for idx in yarnd_ids:
+            result.update(self.__session.query(Synset).filter(Synset.yarn_id == idx).one().synset.split(';'))
+        return result
+
 
 if __name__ == '__main__':
-    # a = Alchemy()
-    # print(a.get_synset_definitions(1))
-    pass
+    a = Alchemy('data.db')
+    print(len(a.get_concatenated_synsets_by_yarn_ids(yarnd_ids=[1,5])))

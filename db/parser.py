@@ -5,7 +5,6 @@ import tqdm
 from db.alchemy import Alchemy
 from db.base import Word, Definition, WordDefinitionRelation, Synset, SynsetWord
 
-
 alchemy = Alchemy(path='data.db')
 
 
@@ -68,8 +67,8 @@ def create_synsets(csv_path, session_add_bound):
 
 
 if __name__ == '__main__':
-    create_from_dictionary('dicts/ru.wikt_final.json', 100)
-    create_synsets('yarn-synsets.csv', 100)
+    # create_from_dictionary('dicts/ru.wikt_final.json', 100)
+    # create_synsets('yarn-synsets.csv', 100)
 
     # for q in s.query(Word).filter(Word.word == 'отпор').all():
     #     print(q.id, q.word)
@@ -77,3 +76,11 @@ if __name__ == '__main__':
     #     print(q.id, q.definition)
     # for q in s.query(WordDefinitionRelation).filter(WordDefinitionRelation.word_id == 68570).all():
     #     print(q.id, q.word_id, q.definition_id)
+
+    s = alchemy.get_session()
+    # print(s.query(Synset).filter(Synset.grammar == 'mwn').all())
+
+    # for q in s.query(SynsetWord).filter(SynsetWord.synset_id == 1).all():
+    #     print(q.word)
+    # for k, v in alchemy.get_synset_definitions(16).items():
+    #     print(k, '-', v)
