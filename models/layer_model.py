@@ -1,6 +1,7 @@
 import numpy as np
-from typing import List, Dict, Iterable
+from typing import List, Dict, Iterable, Optional
 from functools import partial
+from itertools import combinations
 
 from models.base import Model
 from models.metrics import general_metric, jacard_metric
@@ -34,6 +35,42 @@ class Definition:
         return str(self)
 
 
+class Layer:
+    def __init__(self, word: str,
+                 definitions: Optional[List[Definition]] = None):
+        """
+        :param word: слово синсета
+        :param definitions: определения этого слова
+        """
+        self.word = word
+        self.definitions = definitions if definitions else []
+        self.adjacent_layers = []
+
+    def add_adjacent_layer(self, adjacent):
+        self.adjacent_layers.append(adjacent)
+
+    def add_adjacent_layers(self, layers):
+        self.adjacent_layers.extend(layers)
+
+    def all_definitions_are_linked(self) -> bool:
+        for d in self.definitions:
+            if not d.is_linked():
+                return False
+        return True
+
+    def get_free_definition(self) -> Optional[Definition]:
+        for d in self.definitions:
+            if not d.is_linked():
+                return d
+        return None
+
+    def __str__(self):
+        return '{}:\n{}'.format(self.word, '\n'.join(str(d) for d in self.definitions))
+
+    def __repr__(self):
+        return 'Layer: {}'.format(self.word)
+
+
 
 class LayerModule(Model):
     def definitions_similarity(self, first: str, second: str) -> float:
@@ -56,24 +93,46 @@ class LayerModule(Model):
             unique_meanings.append(combined_definition)
         return unique_meanings
 
-    def _create_layers(self, synset_definition: Dict[str, List[str]]) -> List[Dict[str, List[Definition]]]:
+    def _create_layers(self, synset_definition: Dict[str, List[str]]) -> List[Layer]:
         """
-        :param synset_definitions:
-        :return:
+        :param synset_definitions: слова синсета с определениями
+        :return: уровни из уникальных определений слов
         """
         layers = []
         for word in synset_definition:
             definitions = synset_definition[word]
             if not definitions:
-                layers.append({word: Definition('')})
+                layers.append(Layer(word))
             else:
-                layers.append({word: self._combine_similar_definitions(definitions)})
+                layers.append(Layer(word, self._combine_similar_definitions(definitions)))
+        adjacent_layers = combinations(layers, 2)
+        for adjacent in adjacent_layers:
+            adjacent[0].add_adjacent_layer(adjacent[1])
+            adjacent[1].add_adjacent_layer(adjacent[0])
         return layers
+
+    def _get_next_definition_to_link(self, linked_definition: List[Definition],
+                                    next_layer: Layer) -> Optional[Definition]:
+        """
+        :param linked_definition: определения, объединенные на предыдущих шагах
+        :param next_layer: следующий уровень
+        :return: определение на следующем уровне, если такое есть, похожее по смыслу на уже объединенные
+        """
+        pass
 
     def filter_synset(self, synset_definition: Dict[str, List[str]]):
         layers = self._create_layers(synset_definition)
-        for l in layers:
-            print(l)
+        stack = [layers[0]]
+        while stack:
+            layer = stack.pop()
+            for adjacent in layers:
+                if not adjacent.all_definitions_are_linked():
+                    stack.append(adjacent)
+        for layer in layers:
+            if not layer.all_definitions_are_linked():
+                pass
+            print(layer)
+            print(layer.adjacent_layers)
             print('-----------')
 
     def _matrix_processing(self, matrix):
