@@ -44,13 +44,14 @@ class Layer:
         """
         self.word = word
         self.definitions = definitions if definitions else []
-        self.adjacent_layers = []
+        # self.adjacent_layers = []
+        self.next_layer = None
 
-    def add_adjacent_layer(self, adjacent):
-        self.adjacent_layers.append(adjacent)
-
-    def add_adjacent_layers(self, layers):
-        self.adjacent_layers.extend(layers)
+    # def add_adjacent_layer(self, adjacent):
+    #     self.adjacent_layers.append(adjacent)
+    #
+    # def add_adjacent_layers(self, layers):
+    #     self.adjacent_layers.extend(layers)
 
     def all_definitions_are_linked(self) -> bool:
         for d in self.definitions:
@@ -58,11 +59,10 @@ class Layer:
                 return False
         return True
 
-    def get_free_definition(self) -> Optional[Definition]:
+    def get_free_definition(self) -> Iterable[Definition]:
         for d in self.definitions:
             if not d.is_linked():
-                return d
-        return None
+                yield d
 
     def __str__(self):
         return '{}:\n{}'.format(self.word, '\n'.join(str(d) for d in self.definitions))
@@ -75,6 +75,18 @@ class Layer:
 class LayerModule(Model):
     def definitions_similarity(self, first: str, second: str) -> float:
         return self._metric(w1='', d1=first, w2='', d2=second)
+
+    def _is_definition_in_chain(self, definition: Definition, chain: List[Definition],
+                               threshold=None) -> bool:
+        """
+        :param definition: рассматриваемое определение
+        :param chain: уже объединенные определения
+        :param threshold: порог при сравнение определений по какой-либо метрике
+        :return: можно ли включить определение в цепочку уже объединенных по смыслу определений из chain,
+        т.е похоже ли оно на них по смыслу
+        """
+        #TODO: научиться сравнивать определение с несколькими, пока сравнивается текст текущего с текстом самого последнего добавленного
+        return self.definitions_similarity(definition.definition, chain[-1].definition) > 0.6
 
     def _combine_similar_definitions(self, definitions: List[str]) -> List[Definition]:
         """
@@ -105,10 +117,12 @@ class LayerModule(Model):
                 layers.append(Layer(word))
             else:
                 layers.append(Layer(word, self._combine_similar_definitions(definitions)))
-        adjacent_layers = combinations(layers, 2)
-        for adjacent in adjacent_layers:
-            adjacent[0].add_adjacent_layer(adjacent[1])
-            adjacent[1].add_adjacent_layer(adjacent[0])
+        # adjacent_layers = combinations(layers, 2)
+        # for adjacent in adjacent_layers:
+        #     adjacent[0].add_adjacent_layer(adjacent[1])
+        #     adjacent[1].add_adjacent_layer(adjacent[0])
+        for adjacent in zip(layers, layers[1:]):
+            adjacent[0].next_layer = adjacent[1]
         return layers
 
     def _get_next_definition_to_link(self, linked_definition: List[Definition],
@@ -118,22 +132,39 @@ class LayerModule(Model):
         :param next_layer: следующий уровень
         :return: определение на следующем уровне, если такое есть, похожее по смыслу на уже объединенные
         """
+        if next_layer.all_definitions_are_linked():
+            return None
+        for d in next_layer.get_free_definition():
+            if self._is_definition_in_chain(d, linked_definition):
+                return d
+        return None
+
+    def get_definition_chain_from_layers(self, layers: List[Layer]) -> List[Definition]:
+        """
+        :param layers: уровни определений, созданные по синсетам
+        :return: похожие по смыслу определения из разных уровней
+        """
+        # TODO: implement
         pass
+
 
     def filter_synset(self, synset_definition: Dict[str, List[str]]):
         layers = self._create_layers(synset_definition)
-        stack = [layers[0]]
+        definition_chains = []
+        cur_chain = []
+        visited_layers = set()
+        # TODO: переписать c использованием get_definition_chain_from_layers
         while stack:
             layer = stack.pop()
-            for adjacent in layers:
-                if not adjacent.all_definitions_are_linked():
-                    stack.append(adjacent)
-        for layer in layers:
-            if not layer.all_definitions_are_linked():
-                pass
-            print(layer)
-            print(layer.adjacent_layers)
-            print('-----------')
+            for adjacent in layer.adjacent_layers:
+                if adjacent.word not in visited_layers and not adjacent.all_definitions_are_linked():
+                    next_definition_in_chain = self._get_next_definition_to_link(cur_chain, adjacent)
+                    if next_definition_in_chain:
+                        cur_chain.append(next_definition_in_chain)
+                        stack.append(adjacent)
+                        break
+            visited_layers.add(layer.word)
+
 
     def _matrix_processing(self, matrix):
         rows, _ = np.where(matrix >= self._threshold)
