@@ -7,31 +7,13 @@ from collections import namedtuple
 from models.base import Model
 from models.metrics import general_metric, jacard_metric
 from models.processing import remove_stop_words_tokens
+from models.layer_model.base import Definition
+from models.vector_embeddings import FastTextWrapper
 
 from db.alchemy import Alchemy
 
 
 NewSynset = namedtuple('NewSynset', 'words definitions')
-
-
-class Definition:
-    def __init__(self, word: str, definition: str):
-        self.word = word
-        self.definition = definition
-        self.alternatives = []
-        self.is_linked = None
-
-    def add_alternative_definition(self, alternative: str):
-        self.alternatives.append(alternative)
-
-    def add_alternative_definitions(self, alternatives: Iterable[str]):
-        self.alternatives.extend(alternatives)
-
-    def __str__(self):
-        return 'Definition: {}, alternatives: {}'.format(self.definition, self.alternatives)
-
-    def __repr__(self):
-        return str(self)
 
 
 class Layer:
@@ -71,20 +53,21 @@ class Layer:
 
 
 class LayerModel(Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._fasttext = FastTextWrapper('fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+
     def definitions_similarity(self, first: str, second: str) -> float:
         return self._metric(w1='', d1=first, w2='', d2=second)
 
-    def _is_definition_in_chain(self, definition: Definition, chain: List[Definition],
-                               threshold=None) -> bool:
+    def _is_definition_in_chain(self, definition: Definition, chain: List[Definition]) -> bool:
         """
         :param definition: рассматриваемое определение
         :param chain: уже объединенные определения
-        :param threshold: порог при сравнение определений по какой-либо метрике
         :return: можно ли включить определение в цепочку уже объединенных по смыслу определений из chain,
         т.е похоже ли оно на них по смыслу
         """
-        # TODO: научиться сравнивать определение с несколькими, пока сравнивается текст текущего с текстом самого последнего добавленного
-        return self.definitions_similarity(definition.definition, chain[-1].definition) > 0.3
+        return self._fasttext.is_similar(definition, chain)
 
     def _combine_similar_definitions(self, word: str, definitions: List[str]) -> List[Definition]:
         """
@@ -93,6 +76,7 @@ class LayerModel(Model):
         :param definitions: список исходных определений
         :return: список разных по смыслу определений
         """
+        # TODO: сделать объединение через fasttext
         similarity_matrix = self._create_similarity_matrix(definitions, self.definitions_similarity)
         similar_indices = self._matrix_processing(similarity_matrix)
         unique_meanings = [Definition(word, d) for d in
@@ -102,6 +86,14 @@ class LayerModel(Model):
             combined_definition.add_alternative_definitions(definitions[i] for i in similar_indices[1:])
             unique_meanings.append(combined_definition)
         return unique_meanings
+
+    def _create_definitions(self, word: str, definitions: List[str]) -> List[Definition]:
+        """
+        создает список определений, считается, что каждое строковое определение из словаря уникально по смыслу
+        :param definitions: список исходных определений
+        :return:
+        """
+        return [Definition(word, d) for d in definitions]
 
     def _create_layers(self, synset_definition: Dict[str, List[str]]) -> List[Layer]:
         """
@@ -114,7 +106,8 @@ class LayerModel(Model):
             if not definitions:
                 layers.append(Layer(word))
             else:
-                layers.append(Layer(word, self._combine_similar_definitions(word, definitions)))
+                # layers.append(Layer(word, self._combine_similar_definitions(word, definitions)))
+                layers.append(Layer(word, self._create_definitions(word, definitions)))
         for adjacent in zip_longest(layers, layers[1:]):
             adjacent[0].next_layer = adjacent[1]
         return layers
@@ -192,6 +185,14 @@ if __name__ == '__main__':
     alchemy = Alchemy(path='../db/data.db')
     yarn_ids, synset_definitions = alchemy.get_synsets_definitions((505, 507))
     for p in synset_definitions:
-        print(p)
-    for s in model.extract_new_synsets(synset_definitions[2]):
-        print(s)
+        print(list(p.keys()))
+    print()
+    for s in model.extract_new_synsets(synset_definitions[1]):
+        print('Новый синсет: {}'.format(', '.join(s.words)))
+        if s.definitions:
+            print('Определения:')
+            for d in s.definitions:
+                print('\t{}'.format(d))
+        else:
+            print('Нет определений в словаре')
+        print('-------------------')

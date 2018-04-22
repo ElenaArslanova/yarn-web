@@ -5,7 +5,7 @@ import numpy as np
 from gensim.models import FastText
 from sklearn.metrics.pairwise import cosine_similarity
 
-from models.layer_model import Definition
+from models.layer_model.base import Definition
 
 
 class FastTextWrapper:
@@ -57,6 +57,8 @@ class FastTextWrapper:
         comparing_definitions_vectors = np.array([self.__model[x.definition] for x in comparing_definitions])
         cos_angles = cosine_similarity(target_definition_vector, comparing_definitions_vectors)[0]
         return [math.degrees(math.acos(x)) for x in cos_angles]
+
+    # TODO: метод, принимающий список слов и возвращающий матрицу схожести каждого с каждым, similarity(w, w)=0
 
 
 
