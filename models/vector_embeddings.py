@@ -56,7 +56,7 @@ class FastTextWrapper:
         target_definition_vector = np.array([self.__model[target_definition.definition]])
         comparing_definitions_vectors = np.array([self.__model[x.definition] for x in comparing_definitions])
         cos_angles = cosine_similarity(target_definition_vector, comparing_definitions_vectors)[0]
-        return [math.degrees(math.acos(x)) for x in cos_angles]
+        return [math.degrees(math.acos(np.clip(x, -1, 1))) for x in cos_angles]
 
     # TODO: метод, принимающий список слов и возвращающий матрицу схожести каждого с каждым, similarity(w, w)=0
 

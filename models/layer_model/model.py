@@ -182,7 +182,8 @@ class LayerModel(Model):
 if __name__ == '__main__':
     metric = partial(general_metric, sim_metric=jacard_metric, processing=remove_stop_words_tokens)
     model = LayerModel(0.00001, metric)
-    alchemy = Alchemy(path='../db/data.db')
+    alchemy = Alchemy(path='../../db/data.db')
+
     yarn_ids, synset_definitions = alchemy.get_synsets_definitions((505, 507))
     for p in synset_definitions:
         print(list(p.keys()))
