@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
-
 Base = declarative_base()
 
 
@@ -46,6 +45,9 @@ class Definition(Base):
     def __init__(self, definition):
         self.definition = definition
 
+    def __repr__(self):
+        return self.definition
+
 
 class WordDefinitionRelation(Base):
     __tablename__ = 'wordDefinitionRelation'
@@ -87,6 +89,9 @@ class SynsetWord(Base):
         self.synset_id = synset_id
         self.word = word
         self.word_id = word_id
+
+    def __repr__(self):
+        return "{} - {}".format(self.synset_id, self.word)
 
 
 class Edition(Base):

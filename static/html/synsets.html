@@ -35,35 +35,57 @@
 			<thead>
 				<tr>
 					<th></th>
+					<th style="text-align: center;">id</th>
 					<th style="text-align: center;">Синсет</th>
 					<th style="text-align: right;">Подтвердить</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td><i class="fa fa-check" aria-hidden="true"></i></td>
-					<td>
-						<ul>
-							<li onclick="changeWordState(event)" class=" el green-box">Максим</li>
-							<li onclick="changeWordState(event)" class="el red-box">Елена</li>
-							<li onclick="changeWordState(event)" class="el green-box">Хомка</li>
-						</ul>
-					</td>
-					<td>
-						<button type="button" class="btn btn-primary" style="float: right;" onclick="submitting(event)">Submit</button>
-					</td>
-				</tr>
+				%for syn in synsets:
+					<tr>
+						<td><i class="fa fa-check" aria-hidden="true"></i></td>
+						<td><span style="margin-left:10px;">{{syn.get('id')}}</span></td>
+						<td style="line-height:2;">
+							<ul id="syn-{{syn.get('id')}}">
+								%for wq in syn.get('answer'):
+									%if wq.status == 'correct':
+										<li onclick="changeWordState(event)" oncontextmenu="loadefs(event)" class=" el green-box">{{wq.word}}</li>
+									%end
+
+									%if wq.status == 'incorrect':
+										<li onclick="changeWordState(event)" oncontextmenu="loadefs(event)" class="el red-box">{{wq.word}}</li>
+									%end
+								%end
+							</ul>
+						</td>
+						<td>
+							<button type="button" class="btn btn-primary syn-{{syn.get('id')}}" style="float: right;" onclick="submitting(event)">Submit</button>
+						</td>
+					</tr>
+				%end
 			</tbody>
 		</table>
 	</div>
+	<div id="myModal" class="modal">
+	  <!-- Modal content -->
+	  <div class="modal-content">
+	  	<span class="close">&times;</span>
+	  	<!--Контент -->
+	  	<p id='modal-word'>Word</p>
+	  	<ul id='modal-def' class="list-group">
+	  		
+	  	</ul>
+	  </div>
+	</div>
 	
 </body>
+<script type="text/javascript" src="../js/handlingchanges.js"></script>
 <script type="text/javascript">
 
 	function changeWordState(event) {
 		var element = event.target;
+		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[1];
 		changeElementBackgroundColor(element);
-		var statusIcon = getPreviousSiblings(element.parentElement.parentElement)[0];
 		$(statusIcon).css("color", "red");
 	}
 
@@ -78,8 +100,18 @@
 	function submitting(event) {
 		// ассинхронная логика отправки данных на сервер, TODO
 		var element = event.target;
-		var statusIcon = getPreviousSiblings(element.parentElement)[1];
-		$(statusIcon).css("color", "green");
+		var statusIcon = getPreviousSiblings(element.parentElement)[2];
+		var toServeRresult = bag.getSynsetResults(document.getElementById(element.classList[2]));
+		$.ajax({
+        type: "POST",
+        url: '/receive_edition',
+        contentType: "application/json; charset=utf-8",
+        dataType: 'json',
+        async: true,
+        data: JSON.stringify(toServeRresult),
+    }).done(function(res) {
+    	$(statusIcon).css("color", "green");
+    })
 	}
 
 	function getPreviousSiblings(elem) {
@@ -90,7 +122,35 @@
     }
     return sibs;
 	}	
+</script>
+<script type="text/javascript">
+	var modal = document.getElementById('myModal');
+	var span = document.getElementsByClassName("close")[0];
+	function loadefs(event) {
+		event.preventDefault();
+		var targetWord = document.getElementById('modal-word');
+		var targetList = document.getElementById('modal-def');
+		$(targetWord).text(event.target.textContent);
+		$(targetList).empty();
+		var word = {'word' : event.target.textContent};
+		modal.style.display = 'block';
+		$.ajax({
+			type: 'POST',
+			url: 'word_definition',
+			contentType: "application/json; charset=utf-8",
+			dataType: 'json',
+			async: true,
+			data: JSON.stringify(word)
+		}).done(function(response) {
+			for (var i=0; i < response.length; i++) {
+				$(targetList).append('<li class="list-group-item">' + response[i] + '</li>')
+			}
+		})
+	}
 
+	span.onclick = function() {
+		modal.style.display = 'none';
+	}
 
 </script>
 </html>

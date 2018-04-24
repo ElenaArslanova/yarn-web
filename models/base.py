@@ -1,7 +1,7 @@
 import itertools
 import abc
 from collections import OrderedDict
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 from functools import partial
 
 import numpy as np
@@ -10,6 +10,7 @@ import pandas as pd
 from db.alchemy import Alchemy
 from models.metrics import general_metric, jacard_with_word_influence
 from models.processing import remove_stop_words_tokens
+from models.utils import results_as_dict
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -20,9 +21,29 @@ class Model(metaclass=abc.ABCMeta):
         вид функции - metric(a, b) -> float
         """
         self._threshold = threshold
-        self.__metric = metric
+        self._metric = metric
 
-    def __create_matrix(self, pair: List[Tuple[str, List[str]]], multiple_meaning_strategy: str = 'closest'):
+    def  _create_similarity_matrix(self, objects: List[Any], metric):
+        """
+        :param objects: список объектов для сравнения
+        :param metric: функция, вычисляющая схожесть двух объектов и возвращающая число в [0, 1]
+        :return: матрица, где [i, j] - похожесть i-го объекта на j-й
+        """
+        length = len(objects)
+        matrix = np.zeros((length, length))
+        viewed_elements = np.zeros((length, length), dtype=bool)
+
+        for i in range(length):
+            for j in range(length):
+                if i == j or viewed_elements[i, j]:
+                    continue
+                matrix[i, j] = matrix[j, i] = metric(objects[i], objects[j])
+                viewed_elements[i, j], viewed_elements[i, j] = True, True
+
+        return matrix
+
+    def __create_word_similarity_matrix(self, pair: List[Tuple[str, List[str]]],
+                                        multiple_meaning_strategy: str = 'closest'):
         """
         :param pair: лист из кортежей вида: слово - лист определений
         :param multiple_meaning_strategy: что делать с многозначными словами, какое определение выбирать.
@@ -32,20 +53,7 @@ class Model(metaclass=abc.ABCMeta):
             pass
         else:
             scorer = self.strict_similarity
-
-        length = len(pair)
-        matrix = np.zeros((length, length))
-        viewed_elements = np.zeros((length, length), dtype=bool)
-
-        for i in range(length):
-            for j in range(length):
-                if i == j or viewed_elements[i, j]:
-                    continue
-
-                matrix[i, j] = matrix[j, i] = scorer(pair[i], pair[j])
-                viewed_elements[i, j], viewed_elements[i, j] = True, True
-
-        return matrix
+        return self._create_similarity_matrix(pair, scorer)
 
     def strict_similarity(self, first: Tuple[str, List[str]], second: Tuple[str, List[str]]) -> float:
         """
@@ -55,7 +63,7 @@ class Model(metaclass=abc.ABCMeta):
         """
         w1, ds1 = first
         w2, ds2 = second
-        return max(map(lambda x: self.__metric(w1, w2, x[0], x[1]), itertools.product(ds1, ds2)))
+        return max(map(lambda x: self._metric(w1, w2, x[0], x[1]), itertools.product(ds1, ds2)))
 
     @abc.abstractmethod
     def _matrix_processing(self, matrix) -> np.ndarray:
@@ -95,7 +103,7 @@ class Model(metaclass=abc.ABCMeta):
             return [def_pairs[0][0]], []
         pairs = [(k, v) for k, v in def_pairs if v is not None]
         auto = [k for k, v in def_pairs if v is None]
-        matrix = self.__create_matrix(pairs)
+        matrix = self.__create_word_similarity_matrix(pairs)
         result_indexes = self._matrix_processing(matrix)
         synset = [pairs[i][0] for i in result_indexes]
         synset.extend(auto)
@@ -112,19 +120,23 @@ if __name__ == '__main__':
     metric = partial(general_metric, sim_metric=jacard_with_word_influence, processing=remove_stop_words_tokens)
     m = MajorityRowModel(0.4, metric)
     alchemy = Alchemy(path='../db/data.db')
-    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((500, 600))
+    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((500, 505))
+    print(synset_definitions)
     answers = m.clean(synset_definitions)
-    filtered = []
-    dropped = []
-    source = []
-    id = []
-    for idx, answer in zip(yarn_ids, answers):
-        clean, dirty = answer
-        filtered.append(';'.join(clean))
-        dropped.append(';'.join(dirty))
-        clean.extend(dirty)
-        source.append(';'.join(clean))
-        id.append(idx)
-    frame = pd.DataFrame(OrderedDict({'yarn_id': id, 'исходный синсет': source, 'отфильтрованный': filtered,
-                                      'остальное': dropped}))
-    frame.to_csv('batch.csv', encoding='utf-8')
+    print(answers)
+    # filtered = []
+    # dropped = []
+    # source = []
+    # id = []
+    # for idx, answer in zip(yarn_ids, answers):
+    #     clean, dirty = answer
+    #     filtered.append(';'.join(clean))
+    #     dropped.append(';'.join(dirty))
+    #     clean.extend(dirty)
+    #     source.append(';'.join(clean))
+    #     id.append(idx)
+    # frame = pd.DataFrame(OrderedDict({'yarn_id': id, 'исходный синсет': source, 'отфильтрованный': filtered,
+    #                                   'остальное': dropped}))
+    # frame.to_csv('batch.csv', encoding='utf-8')
+    print('-------')
+    print(results_as_dict(yarn_ids, answers))
