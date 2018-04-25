@@ -53,7 +53,7 @@ class Layer:
 class LayerModel(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fasttext = FastTextWrapper('fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+        self._fasttext = FastTextWrapper('../fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
 
     def set_fasttext_definition_strategy(self, new_strategy):
         self._fasttext.set_new_strategy(new_strategy)

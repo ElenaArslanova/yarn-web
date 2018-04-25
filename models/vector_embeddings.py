@@ -58,7 +58,6 @@ class FastTextWrapper:
     def __is_similar_average(self, target_definition: Definition, comparing_definitions: List[Definition]) -> bool:
         sim = self.__get_cosine_similarity(target_definition, comparing_definitions)
         mean = np.mean(sim)
-        print(mean)
         return mean >= self.__threshold
 
     def __is_similar_last(self, target_definition: Definition, comparing_definitions: List[Definition]) -> bool:
