@@ -12,7 +12,6 @@ from models.vector_embeddings import FastTextWrapper
 
 from db.alchemy import Alchemy
 
-
 NewSynset = namedtuple('NewSynset', 'words definitions')
 
 
@@ -51,11 +50,16 @@ class Layer:
         return 'Layer: {}'.format(self.word)
 
 
-
 class LayerModel(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._fasttext = FastTextWrapper('fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+
+    def set_fasttext_definition_strategy(self, new_strategy):
+        self._fasttext.set_new_strategy(new_strategy)
+
+    def set_fasttext_threshold(self, new_threshold):
+        self._fasttext.set_new_threshold(new_threshold)
 
     def definitions_similarity(self, first: str, second: str) -> float:
         return self._metric(w1='', d1=first, w2='', d2=second)
@@ -113,7 +117,7 @@ class LayerModel(Model):
         return layers
 
     def _get_next_definition_to_link(self, linked_definition: List[Definition],
-                                    next_layer: Layer) -> Optional[Definition]:
+                                     next_layer: Layer) -> Optional[Definition]:
         """
         :param linked_definition: определения, объединенные на предыдущих шагах
         :param next_layer: следующий уровень
@@ -184,11 +188,23 @@ if __name__ == '__main__':
     model = LayerModel(0.00001, metric)
     alchemy = Alchemy(path='../../db/data.db')
 
-    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((505, 507))
+    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((508, 510))
     for p in synset_definitions:
         print(list(p.keys()))
     print()
-    for s in model.extract_new_synsets(synset_definitions[1]):
+    for s in model.extract_new_synsets(synset_definitions[0]):
+        print('Новый синсет: {}'.format(', '.join(s.words)))
+        if s.definitions:
+            print('Определения:')
+            for d in s.definitions:
+                print('\t{}'.format(d))
+        else:
+            print('Нет определений в словаре')
+        print('-------------------')
+
+    print('-------------CLOSEST STRATEGY-----------------')
+    model.set_fasttext_definition_strategy('closest')
+    for s in model.extract_new_synsets(synset_definitions[0]):
         print('Новый синсет: {}'.format(', '.join(s.words)))
         if s.definitions:
             print('Определения:')
