@@ -1,3 +1,4 @@
+import re
 from typing import Dict, List, Tuple
 
 from sqlalchemy import create_engine, and_
@@ -81,7 +82,7 @@ class Alchemy:
             .filter(WordDefinitionRelation.definition_id == Definition.id).all()
         if not definitions:
             return []
-        return [x[0] for x in definitions]
+        return [x[0] for x in definitions if re.sub(r'[^\w\s]','', x[0])]
 
     def get_words_definitions(self, words: List[str]):
         result = {}
@@ -102,4 +103,5 @@ class Alchemy:
 
 if __name__ == '__main__':
     a = Alchemy('data.db')
+    print(a.get_word_definitions('лад'))
     print(len(a.get_concatenated_synsets_by_yarn_ids(yarnd_ids=[1,5])))

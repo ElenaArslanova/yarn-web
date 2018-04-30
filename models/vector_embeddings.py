@@ -86,8 +86,18 @@ class FastTextWrapper:
 
     def __get_cosine_similarity(self, target_definition: Definition,
                                 comparing_definitions: List[Definition]) -> np.array:
-        target_definition_vector = np.array([self.__model[target_definition.definition]])
-        comparing_definitions_vectors = np.array([self.__model[x.definition] for x in comparing_definitions])
+        try:
+            target_definition_vector = np.array([self.__model[target_definition.definition]])
+        except KeyError:
+            print(target_definition.definition,
+                  target_definition.word)
+            raise KeyError('Все слова неизвестны')
+
+        try:
+            comparing_definitions_vectors = np.array([self.__model[x.definition] for x in comparing_definitions])
+        except KeyError:
+            print(comparing_definitions)
+            raise KeyError('Все слова неизвестны')
         return cosine_similarity(target_definition_vector, comparing_definitions_vectors)[0]
 
         # TODO: метод, принимающий список слов и возвращающий матрицу схожести каждого с каждым, similarity(w, w)=0
