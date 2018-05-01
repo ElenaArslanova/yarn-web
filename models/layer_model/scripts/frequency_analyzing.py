@@ -1,11 +1,10 @@
-import pandas
 import json
 import tqdm
 import os
 from typing import List
 
-from db.alchemy import Alchemy
 from db.base import Word, WordDefinitionRelation, Definition
+from db.data.manager import load_alchemy, read_pandas
 
 
 def add_absent_words_from_dictionary(absent_words: List[str], dict_path: str):
@@ -15,7 +14,7 @@ def add_absent_words_from_dictionary(absent_words: List[str], dict_path: str):
     :param dict_path: путь до словаря
     :return:
     """
-    a = Alchemy('../../../db/data.db')
+    a = load_alchemy('data.db')
     session = a.get_session()
     session_counter = 0
     absent_words = set(absent_words)
@@ -82,9 +81,9 @@ def test_all_available_dictionaries(absent_words):
 
 
 def find_absent_words():
-    a = Alchemy('../../../db/data.db')
+    a = load_alchemy('data.db')
     session = a.get_session()
-    frame = pandas.read_csv('yarn-synsets.csv', encoding='utf-8')
+    frame = read_pandas('yarn-synsets.csv')
 
     dictionary = set()
     words_with_no_defs = set()

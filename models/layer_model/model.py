@@ -4,6 +4,7 @@ from functools import partial
 from itertools import zip_longest
 from collections import namedtuple
 
+from db.data.manager import load_alchemy
 from models.base import Model
 from models.metrics import general_metric, jacard_metric
 from models.processing import remove_stop_words_tokens
@@ -53,7 +54,7 @@ class Layer:
 class LayerModel(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fasttext = FastTextWrapper('../fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+        self._fasttext = FastTextWrapper()
 
     def set_fasttext_definition_strategy(self, new_strategy):
         self._fasttext.set_new_strategy(new_strategy)
@@ -186,7 +187,7 @@ class LayerModel(Model):
 if __name__ == '__main__':
     metric = partial(general_metric, sim_metric=jacard_metric, processing=remove_stop_words_tokens)
     model = LayerModel(0.00001, metric)
-    alchemy = Alchemy(path='../../db/data.db')
+    alchemy = load_alchemy('data.db')
 
     yarn_ids, synset_definitions = alchemy.get_synsets_definitions((508, 510))
     for p in synset_definitions:

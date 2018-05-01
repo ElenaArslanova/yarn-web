@@ -1,37 +1,12 @@
-import re
 from functools import partial
 
 from db.alchemy import Alchemy
+from db.data.manager import get_golden
 from models.base import MajorityRowModel
 from models.metrics import general_metric, jacard_with_word_influence
 from models.processing import remove_stop_words_tokens
 
 
-def get_golden(filename, drop_bad_synsets=True, drop_unsure_words=True):
-    import re
-    with open(filename, 'r', encoding='utf-8') as f:
-        raw = f.read()
-
-    raw = raw.strip()
-
-    if drop_bad_synsets:
-        raw = re.sub(r'#\d+\n?', '', raw)
-    else:
-        raw = raw.replace('#', '')
-
-    if drop_unsure_words:
-        raw = re.sub(r'\?\w+, |, \?\w+', '', raw)
-    else:
-        raw = raw.replace('?', '')
-
-    clusters = raw.split('\n\n')
-    golden = {}
-    for cluster in clusters:
-        words, *sIDs = cluster.split('\n')
-        words = frozenset(words.split(', '))
-        sIDs = set(int(sID) for sID in sIDs if sID)
-        golden[words] = sIDs
-    return golden
 
 
 def similarity(correct: set, model_prediction: set):

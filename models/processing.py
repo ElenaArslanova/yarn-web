@@ -4,10 +4,11 @@ from typing import List, Callable, Optional
 from pymorphy2.tokenizers import simple_word_tokenize
 from pymorphy2 import analyzer
 
+from db.data.manager import load_text_file
+
 morph = analyzer.MorphAnalyzer()
 
-with open('stopwords.txt') as f:
-    stopwords = set(f.read().split())
+stopwords = set(load_text_file('stopwords.txt').split())
 
 
 def tokenize(definition: str) -> List[str]:

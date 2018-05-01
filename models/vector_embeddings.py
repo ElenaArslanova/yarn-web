@@ -5,6 +5,7 @@ import numpy as np
 from gensim.models import FastText
 from sklearn.metrics.pairwise import cosine_similarity
 
+from db.data.manager import load_fasttext_bin
 from models.layer_model.base import Definition
 
 
@@ -14,14 +15,18 @@ class FastTextWrapper:
     """
     similarity_strategies = ['average', 'closest', 'last']
 
-    def __init__(self, model_path: str, cosine_sim_threshold=0.55):
+    def __init__(self, model_path: str=None, cosine_sim_threshold=0.55):
         """
         :param model_path: путь до предъобученной бинарной модели
         :param cosine_sim_threshold: пороговое значение для сравнения. Если схожесть не будет превосходить
         указанного знпчения при сравнении двух определений, то считается, что определения похожи
         """
         self.__threshold = cosine_sim_threshold
-        self.__model = FastText.load(model_path)
+        if not model_path:
+            self.__model = load_fasttext_bin('fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+        else:
+            pass
+
         self.__similarity_strategy = 'average'
         if self.__similarity_strategy not in FastTextWrapper.similarity_strategies:
             raise  ValueError('Неизвестная стратегия схожести - {}'.format(self.__similarity_strategy))
@@ -104,7 +109,7 @@ class FastTextWrapper:
 
 
 if __name__ == '__main__':
-    m = FastTextWrapper('layer_model/fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+    m = FastTextWrapper()
 
     car_definitions = [
         Definition('идея', 'то же, что учение; система политических представлений')]

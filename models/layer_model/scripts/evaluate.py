@@ -1,37 +1,9 @@
 from functools import partial
 
-from db.alchemy import Alchemy
-from models.base import MajorityRowModel
+from db.data.manager import get_golden, load_alchemy
 from models.layer_model.model import LayerModel
-from models.metrics import general_metric, jacard_with_word_influence, jacard_metric
+from models.metrics import general_metric, jacard_metric
 from models.processing import remove_stop_words_tokens
-
-
-def get_golden(filename, drop_bad_synsets=True, drop_unsure_words=True):
-    import re
-    with open(filename, 'r', encoding='utf-8') as f:
-        raw = f.read()
-
-    raw = raw.strip()
-
-    if drop_bad_synsets:
-        raw = re.sub(r'#\d+\n?', '', raw)
-    else:
-        raw = raw.replace('#', '')
-
-    if drop_unsure_words:
-        raw = re.sub(r'\?\w+, |, \?\w+', '', raw)
-    else:
-        raw = raw.replace('?', '')
-
-    clusters = raw.split('\n\n')
-    golden = {}
-    for cluster in clusters:
-        words, *sIDs = cluster.split('\n')
-        words = frozenset(words.split(', '))
-        sIDs = set(int(sID) for sID in sIDs if sID)
-        golden[words] = sIDs
-    return golden
 
 
 def similarity(correct: set, model_prediction: set):
@@ -43,7 +15,7 @@ if __name__ == '__main__':
 
     metric = partial(general_metric, sim_metric=jacard_metric, processing=remove_stop_words_tokens)
     model = LayerModel(0.00001, metric)
-    alchemy = Alchemy(path='../../db/data.db')
+    alchemy = load_alchemy('data.db')
 
     scores = []
     for key, value in golden.items():
@@ -62,7 +34,7 @@ if __name__ == '__main__':
             else:
                 print('Нет определений в словаре')
             print('-------------------')
-    #     clean, dropped = m.clean(definitions)[0]
-    #     score = similarity(key, set(clean))
-    #     scores.append(score)
-    # print('Mean score: {}'.format(np.mean(scores)))
+            #     clean, dropped = m.clean(definitions)[0]
+            #     score = similarity(key, set(clean))
+            #     scores.append(score)
+            # print('Mean score: {}'.format(np.mean(scores)))
