@@ -23,7 +23,7 @@ def create_from_dictionary(path, session_add_bound):
                 relations_buffer.clear()
                 session_counter = 0
             dict_entry = json.loads(line)
-            if 'definition' in dict_entry:
+            if 'definition' in dict_entry and dict_entry['word']:
                 definitions = [Definition(d) for d in dict_entry['definition']]
                 word_entry = dict_entry['word'][0]
                 words = []
