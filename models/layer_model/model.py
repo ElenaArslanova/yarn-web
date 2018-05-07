@@ -3,6 +3,7 @@ from typing import List, Dict, Iterable, Optional, Tuple
 from functools import partial
 from itertools import zip_longest
 from collections import namedtuple
+from pymorphy2 import MorphAnalyzer
 
 from db.data.manager import load_alchemy
 from models.base import Model
@@ -11,12 +12,14 @@ from models.processing import remove_stop_words_tokens
 from models.layer_model.base import Definition
 from models.vector_embeddings import FastTextWrapper
 
-from db.alchemy import Alchemy
+
+# morph = MorphAnalyzer()
 
 NewSynset = namedtuple('NewSynset', 'words definitions')
 
 
 class Layer:
+    #TODO: в новый синсет добавлять неизмененное слово, если оно как-то обрабатывалось (словосочетание)
     def __init__(self, word: str,
                  definitions: Optional[List[Definition]] = None):
         """
@@ -24,8 +27,22 @@ class Layer:
         :param definitions: определения этого слова
         """
         self.word = word
+        # self.original_word = word
         self.definitions = definitions if definitions else []
         self.next_layer = None
+
+    # def _normalize_word(self):
+    #     """
+    #     если word - словосочетание, то выделяет в нем существительное и возвращает его
+    #     :param word: слово из синсета
+    #     :return:
+    #     """
+    #     parts = self.original_word.split()
+    #     if len(parts) > 1:
+    #         for part in parts:
+    #             parsed = morph.parse(part)[0]
+    #             if 'NOUN' in parsed.tag:
+    #                 self.word = parsed.normal_form
 
     def all_definitions_are_linked(self) -> bool:
         for d in self.definitions:
@@ -64,6 +81,7 @@ class LayerModel(Model):
 
     def definitions_similarity(self, first: str, second: str) -> float:
         return self._metric(w1='', d1=first, w2='', d2=second)
+
 
     def _is_definition_in_chain(self, definition: Definition, chain: List[Definition]) -> bool:
         """
@@ -111,7 +129,6 @@ class LayerModel(Model):
             if not definitions:
                 layers.append(Layer(word))
             else:
-                # layers.append(Layer(word, self._combine_similar_definitions(word, definitions)))
                 layers.append(Layer(word, self._create_definitions(word, definitions)))
         for adjacent in zip_longest(layers, layers[1:]):
             adjacent[0].next_layer = adjacent[1]
@@ -176,7 +193,8 @@ class LayerModel(Model):
             if not new_synset.words:
                 break
             synsets.append(new_synset)
-        synsets.append(NewSynset([layer.word for layer in layers_without_definitions], None))
+        if layers_without_definitions:
+            synsets.append(NewSynset([layer.word for layer in layers_without_definitions], None))
         return synsets
 
     def _matrix_processing(self, matrix):

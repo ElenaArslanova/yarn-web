@@ -4,7 +4,7 @@ import os
 from typing import List
 
 from db.base import Word, WordDefinitionRelation, Definition
-from db.data.manager import load_alchemy, read_pandas
+from db.data.manager import load_alchemy, read_pandas, get_golden, load_json_file
 
 
 def add_absent_words_from_dictionary(absent_words: List[str], dict_path: str):
@@ -47,7 +47,7 @@ def add_absent_words_from_dictionary(absent_words: List[str], dict_path: str):
 
 
 def add_absent_words_from_all_dictionaries():
-    dicts = ['ru.wikt', 'efremova', 'mas', 'ushakov', 'bts', 'ruTes', 'ozhshv', 'babenko', 'yarn']
+    dicts = ['ru.wikt', 'mas', 'ushakov', 'bts', 'ruTes', 'ozhshv', 'babenko', 'yarn', 'efremova']
     dict_paths = {d: 'dicts/{}_final.json'.format(d) for d in dicts[1:]}
     dict_absent = {d: '{}_absent.json'.format(d) for d in dicts}
     for i, d in enumerate(dicts[1:]):
@@ -80,6 +80,30 @@ def test_all_available_dictionaries(absent_words):
             print('Testing {}, found {} absent words'.format(dict_path, len(added_words)))
 
 
+def analyze_golden():
+    alchemy = load_alchemy('data.db')
+    golden = get_golden('golden.txt', drop_bad_synsets=True, drop_unsure_words=True)
+    absent_words = set(load_json_file('yarn_absent.json'))
+    clean_synsets_with_origin_ids = [(key, value) for key, value in golden.items() if value]
+    golden_absent = set()
+    collocations = set()
+    for clean_synset, origin_ids in clean_synsets_with_origin_ids:
+        concatenated_words = alchemy.get_concatenated_synsets_by_yarn_ids(origin_ids)
+        for word in concatenated_words:
+            if len(word.split()) > 1:
+                collocations.add(word)
+            elif word in absent_words:
+                golden_absent.add(word)
+
+    print('Missing {} words'.format(len(golden_absent)))
+    print('{} collocations found'.format(len(collocations)))
+
+    with open('golden_absent.json', 'w') as f:
+        json.dump(list(golden_absent), f)
+    with open('golden_collocations.json', 'w') as f:
+        json.dump(list(collocations), f)
+
+
 def find_absent_words():
     a = load_alchemy('data.db')
     session = a.get_session()
@@ -108,14 +132,17 @@ def find_absent_words():
 
 
 if __name__ == '__main__':
+    analyze_golden()
+
+
     # add_absent_words_from_all_dictionaries()
 
     # test_all_available_dictionaries(absent_words)
 
-    with open('yarn_absent.json') as f:
-        absent_words = json.load(f)
-
-    for w in absent_words:
-        if len(w.split(' ')) == 1:
-            print(w)
+    # with open('yarn_absent.json') as f:
+    #     absent_words = json.load(f)
+    #
+    # for w in absent_words:
+    #     if len(w.split(' ')) == 1:
+    #         print(w)
 

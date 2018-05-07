@@ -29,7 +29,7 @@ def read_pandas(path_file: str) -> Alchemy:
 
 def get_golden(filename, drop_bad_synsets=True, drop_unsure_words=True):
     import re
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(os.path.join(os.path.dirname(__file__), filename), 'r', encoding='utf-8') as f:
         raw = f.read()
 
     raw = raw.strip()

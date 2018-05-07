@@ -3,9 +3,9 @@ import tqdm
 
 import numpy as np
 
-from db.alchemy import Alchemy
+from db.base import Word
 from models.layer_model.model import LayerModel
-from models.layer_model.scripts.utils import get_golden
+from db.data.manager import get_golden, load_alchemy
 
 
 def jaccard_similarity(correct: set, model_prediction: set):
@@ -21,15 +21,18 @@ def process_tuning(correct_synset: set, model: LayerModel, thresholds: np.array,
 
 
 if __name__ == '__main__':
-    alchemy = Alchemy('../../../db/data.db')
+    alchemy = load_alchemy('data.db')
     model = LayerModel(0.557, None)
-    model.set_fasttext_definition_strategy('closest')
+    model.set_fasttext_definition_strategy('average')
+    #
+    #
+    #
     # thresholds = list(x / 100 for x in range(25, 100, 5))
     # report = {}
     # for threshold in thresholds:
     #     report[threshold] = {'threshold': threshold, 'scores': [], 'mean_score': 0}
     #
-    # golden = get_golden('../golden.txt', drop_bad_synsets=True, drop_unsure_words=True)
+    # golden = get_golden('golden.txt', drop_bad_synsets=True, drop_unsure_words=True)
     # clean_synsets_with_origin_ids = [(key, value) for key, value in golden.items() if value]
     #
     # for clean_synset, origin_ids in tqdm.tqdm(clean_synsets_with_origin_ids):
@@ -43,6 +46,18 @@ if __name__ == '__main__':
     #
     # with open('report_closest_search', 'w') as fp:
     #         json.dump(report, fp)
+
+    # with open('report_closest_search') as fp:
+    #     res = json.load(fp)
+    # max_mean_score = max(res[t]['mean_score'] for t in res)
+    # print(max_mean_score)
+    #
+    # for t in res:
+    #     if res[t]['mean_score'] == max_mean_score:
+    #         print(t)
+    #
+    # print(res['0.6']['mean_score'])
+
     defs = alchemy.get_words_definitions(['пучина', 'бездна', 'пропасть'])
     new_synsets = model.extract_new_synsets(defs)
     for s in new_synsets:
