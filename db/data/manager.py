@@ -21,6 +21,9 @@ def load_fasttext_bin(model_path: str):
 
 def load_word2vec_bin(model_path: str):
     # now using fasttext, not word2vec
+    # для wor2vec должно быть так:
+    # return KeyedVectors.load_word2vec_format(os.path.join(os.path.dirname(__file__), model_path), binary=False)
+    # сейчас так:
     return FastText.load(os.path.join(os.path.dirname(__file__), model_path))
 
 

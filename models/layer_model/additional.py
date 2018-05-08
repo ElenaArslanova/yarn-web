@@ -42,6 +42,10 @@ class Word2VecOrdering:
         if new_model_path:
             Word2VecOrdering.loaded_model = load_word2vec_bin(new_model_path)
         else:
+            # надо использовать эту модель для word2vec
+            # 'word2vec_model/ruwikiruscorpora-nobigrams_upos_skipgram_300_5_2018.vec.gz')
+            # сейчас используется fasttext
+
             Word2VecOrdering.loaded_model = load_word2vec_bin(
                 'fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
 
