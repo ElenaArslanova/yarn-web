@@ -1,7 +1,7 @@
 import json
 import os
 import pandas as pd
-from gensim.models import FastText
+from gensim.models import FastText, Word2Vec, KeyedVectors
 
 from db.alchemy import Alchemy
 
@@ -16,6 +16,11 @@ def load_json_file(file_name: str):
 
 
 def load_fasttext_bin(model_path: str):
+    return FastText.load(os.path.join(os.path.dirname(__file__), model_path))
+
+
+def load_word2vec_bin(model_path: str):
+    # now using fasttext, not word2vec
     return FastText.load(os.path.join(os.path.dirname(__file__), model_path))
 
 
