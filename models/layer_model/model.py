@@ -3,20 +3,23 @@ from typing import List, Dict, Iterable, Optional, Tuple
 from functools import partial
 from itertools import zip_longest
 from collections import namedtuple
+from pymorphy2 import MorphAnalyzer
 
+from db.data.manager import load_alchemy
 from models.base import Model
 from models.metrics import general_metric, jacard_metric
 from models.processing import remove_stop_words_tokens
 from models.layer_model.base import Definition
 from models.vector_embeddings import FastTextWrapper
 
-from db.alchemy import Alchemy
 
+# morph = MorphAnalyzer()
 
 NewSynset = namedtuple('NewSynset', 'words definitions')
 
 
 class Layer:
+    #TODO: в новый синсет добавлять неизмененное слово, если оно как-то обрабатывалось (словосочетание)
     def __init__(self, word: str,
                  definitions: Optional[List[Definition]] = None):
         """
@@ -24,8 +27,22 @@ class Layer:
         :param definitions: определения этого слова
         """
         self.word = word
+        # self.original_word = word
         self.definitions = definitions if definitions else []
         self.next_layer = None
+
+    # def _normalize_word(self):
+    #     """
+    #     если word - словосочетание, то выделяет в нем существительное и возвращает его
+    #     :param word: слово из синсета
+    #     :return:
+    #     """
+    #     parts = self.original_word.split()
+    #     if len(parts) > 1:
+    #         for part in parts:
+    #             parsed = morph.parse(part)[0]
+    #             if 'NOUN' in parsed.tag:
+    #                 self.word = parsed.normal_form
 
     def all_definitions_are_linked(self) -> bool:
         for d in self.definitions:
@@ -51,14 +68,20 @@ class Layer:
         return 'Layer: {}'.format(self.word)
 
 
-
 class LayerModel(Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._fasttext = FastTextWrapper('fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
+        self._fasttext = FastTextWrapper()
+
+    def set_fasttext_definition_strategy(self, new_strategy):
+        self._fasttext.set_new_strategy(new_strategy)
+
+    def set_fasttext_threshold(self, new_threshold):
+        self._fasttext.set_new_threshold(new_threshold)
 
     def definitions_similarity(self, first: str, second: str) -> float:
         return self._metric(w1='', d1=first, w2='', d2=second)
+
 
     def _is_definition_in_chain(self, definition: Definition, chain: List[Definition]) -> bool:
         """
@@ -106,14 +129,13 @@ class LayerModel(Model):
             if not definitions:
                 layers.append(Layer(word))
             else:
-                # layers.append(Layer(word, self._combine_similar_definitions(word, definitions)))
                 layers.append(Layer(word, self._create_definitions(word, definitions)))
         for adjacent in zip_longest(layers, layers[1:]):
             adjacent[0].next_layer = adjacent[1]
         return layers
 
     def _get_next_definition_to_link(self, linked_definition: List[Definition],
-                                    next_layer: Layer) -> Optional[Definition]:
+                                     next_layer: Layer) -> Optional[Definition]:
         """
         :param linked_definition: определения, объединенные на предыдущих шагах
         :param next_layer: следующий уровень
@@ -171,7 +193,8 @@ class LayerModel(Model):
             if not new_synset.words:
                 break
             synsets.append(new_synset)
-        synsets.append(NewSynset([layer.word for layer in layers_without_definitions], None))
+        if layers_without_definitions:
+            synsets.append(NewSynset([layer.word for layer in layers_without_definitions], None))
         return synsets
 
     def _matrix_processing(self, matrix):
@@ -182,13 +205,25 @@ class LayerModel(Model):
 if __name__ == '__main__':
     metric = partial(general_metric, sim_metric=jacard_metric, processing=remove_stop_words_tokens)
     model = LayerModel(0.00001, metric)
-    alchemy = Alchemy(path='../../db/data.db')
+    alchemy = load_alchemy('data.db')
 
-    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((505, 507))
+    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((508, 510))
     for p in synset_definitions:
         print(list(p.keys()))
     print()
-    for s in model.extract_new_synsets(synset_definitions[1]):
+    for s in model.extract_new_synsets(synset_definitions[0]):
+        print('Новый синсет: {}'.format(', '.join(s.words)))
+        if s.definitions:
+            print('Определения:')
+            for d in s.definitions:
+                print('\t{}'.format(d))
+        else:
+            print('Нет определений в словаре')
+        print('-------------------')
+
+    print('-------------CLOSEST STRATEGY-----------------')
+    model.set_fasttext_definition_strategy('closest')
+    for s in model.extract_new_synsets(synset_definitions[0]):
         print('Новый синсет: {}'.format(', '.join(s.words)))
         if s.definitions:
             print('Определения:')
