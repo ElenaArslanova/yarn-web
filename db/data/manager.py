@@ -5,6 +5,9 @@ from gensim.models import FastText, Word2Vec, KeyedVectors
 
 from db.alchemy import Alchemy
 
+__FASTTEXT_MODEL = None
+__WORD2VEC_MODEL = None
+
 
 def load_text_file(file_name: str) -> str:
     with open(os.path.join(os.path.dirname(__file__), file_name)) as f:
@@ -16,7 +19,13 @@ def load_json_file(file_name: str):
 
 
 def load_fasttext_bin(model_path: str):
-    return FastText.load(os.path.join(os.path.dirname(__file__), model_path))
+    global __FASTTEXT_MODEL
+
+    if __FASTTEXT_MODEL:
+        return __FASTTEXT_MODEL
+
+    __FASTTEXT_MODEL = FastText.load(os.path.join(os.path.dirname(__file__), model_path))
+    return __FASTTEXT_MODEL
 
 
 def load_word2vec_bin(model_path: str):
@@ -24,7 +33,7 @@ def load_word2vec_bin(model_path: str):
     # для wor2vec должно быть так:
     # return KeyedVectors.load_word2vec_format(os.path.join(os.path.dirname(__file__), model_path), binary=False)
     # сейчас так:
-    return FastText.load(os.path.join(os.path.dirname(__file__), model_path))
+    return load_fasttext_bin(model_path)
 
 
 def load_alchemy(db_path: str) -> Alchemy:
