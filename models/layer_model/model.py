@@ -2,7 +2,7 @@ import numpy as np
 from typing import List, Dict, Iterable, Optional, Tuple
 from functools import partial
 from itertools import zip_longest
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from pymorphy2 import MorphAnalyzer
 
 from db.data.manager import load_alchemy
@@ -60,6 +60,12 @@ class Layer:
         for d in self.definitions:
             if not d.is_linked:
                 yield d
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.word == other.word
+
+    def __hash__(self):
+        return hash(self.word)
 
     def __str__(self):
         return '{}:\n{}'.format(self.word, '\n'.join(str(d) for d in self.definitions))
@@ -179,6 +185,29 @@ class LayerModel(Model):
                 without_definitions.append(layer)
         return with_definitions, without_definitions
 
+    def _process_layers_without_definitions(self, new_synsets: List[NewSynset], layers: List[Layer]):
+        """
+        Пытается добавить слово из уровня без определений в какой-нибудь новый синсет, если оно похоже на слова из него.
+        Слова, которые ни к какому синсету не подошли, добавляются в отдельный синсет
+        :param new_synsets: созданные синсеты
+        :param layers: уровни без определений
+        :return:
+        """
+        unused_layers = set(layers)
+        add_to_synset = defaultdict(list)  # непосредственно слова добавляются в синсет в самом конце,
+                                           # чтобы оценка схожести считалась всегда по исходному синсету и не зависела
+                                           # от порядка рассмотрения уровней из layers
+        for i, synset in enumerate(new_synsets):
+            for layer in layers:
+                if self._fasttext.is_word_similar_to_list(layer.word, synset.words):
+                    add_to_synset[i].append(layer)
+                    if layer in unused_layers:
+                        unused_layers.remove(layer)
+        for i in add_to_synset:
+            new_synsets[i].words.extend(layer.word for layer in add_to_synset[i])
+        if unused_layers:
+            new_synsets.append(NewSynset([l.word for l in unused_layers], None))
+
     def extract_new_synsets(self, synset_definition: Dict[str, List[str]]) -> List[NewSynset]:
         """
         выделяет из данного синсета новые по смыслу слов, слова без определений в словаре собираются в отдельный синсет
@@ -194,7 +223,8 @@ class LayerModel(Model):
                 break
             synsets.append(new_synset)
         if layers_without_definitions:
-            synsets.append(NewSynset([layer.word for layer in layers_without_definitions], None))
+            print(layers_without_definitions)
+            self._process_layers_without_definitions(synsets, layers_without_definitions)
         return synsets
 
     def _matrix_processing(self, matrix):
@@ -207,7 +237,7 @@ if __name__ == '__main__':
     model = LayerModel(0.00001, metric)
     alchemy = load_alchemy('data.db')
 
-    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((508, 510))
+    yarn_ids, synset_definitions = alchemy.get_synsets_definitions((508, 508))
     for p in synset_definitions:
         print(list(p.keys()))
     print()
@@ -221,14 +251,14 @@ if __name__ == '__main__':
             print('Нет определений в словаре')
         print('-------------------')
 
-    print('-------------CLOSEST STRATEGY-----------------')
-    model.set_fasttext_definition_strategy('closest')
-    for s in model.extract_new_synsets(synset_definitions[0]):
-        print('Новый синсет: {}'.format(', '.join(s.words)))
-        if s.definitions:
-            print('Определения:')
-            for d in s.definitions:
-                print('\t{}'.format(d))
-        else:
-            print('Нет определений в словаре')
-        print('-------------------')
+    # print('-------------CLOSEST STRATEGY-----------------')
+    # model.set_fasttext_definition_strategy('closest')
+    # for s in model.extract_new_synsets(synset_definitions[0]):
+    #     print('Новый синсет: {}'.format(', '.join(s.words)))
+    #     if s.definitions:
+    #         print('Определения:')
+    #         for d in s.definitions:
+    #             print('\t{}'.format(d))
+    #     else:
+    #         print('Нет определений в словаре')
+    #     print('-------------------')
