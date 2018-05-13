@@ -1,5 +1,6 @@
 import json
 import os
+import csv
 import pandas as pd
 from gensim.models import FastText, Word2Vec, KeyedVectors
 
@@ -69,3 +70,15 @@ def get_golden(filename, drop_bad_synsets=True, drop_unsure_words=True):
         sIDs = set(int(sID) for sID in sIDs if sID)
         golden[words] = sIDs
     return golden
+
+def get_golden_csv(filename):
+    with open(os.path.join(os.path.dirname(__file__), filename)) as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=';', fieldnames=['index', 'synset_ids', 'words'])
+        golden = {}
+        for row in reader:
+            index = row['index']
+            golden[index] = {}
+            golden[index]['synset_ids'] = set(
+                [int(s_id) for s_id in row['synset_ids'].split(',')])
+            golden[index]['words'] = frozenset(row['words'].split(','))
+        return golden
