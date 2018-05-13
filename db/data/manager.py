@@ -41,8 +41,8 @@ def load_alchemy(db_path: str) -> Alchemy:
     return Alchemy(os.path.join(os.path.dirname(__file__), db_path))
 
 
-def read_pandas(path_file: str) -> Alchemy:
-    return pd.read_csv(os.path.join(os.path.dirname(__file__), path_file), encoding='utf-8')
+def read_pandas(path_file: str, sep=';') -> pd.DataFrame:
+    return pd.read_csv(os.path.join(os.path.dirname(__file__), path_file), encoding='utf-8', sep=sep)
 
 
 def get_golden(filename, drop_bad_synsets=True, drop_unsure_words=True):
@@ -71,6 +71,7 @@ def get_golden(filename, drop_bad_synsets=True, drop_unsure_words=True):
         golden[words] = sIDs
     return golden
 
+
 def get_golden_csv(filename):
     with open(os.path.join(os.path.dirname(__file__), filename)) as csvfile:
         reader = csv.DictReader(csvfile, delimiter=';', fieldnames=['index', 'synset_ids', 'words'])
@@ -82,3 +83,13 @@ def get_golden_csv(filename):
                 [int(s_id) for s_id in row['synset_ids'].split(',')])
             golden[index]['words'] = frozenset(row['words'].split(','))
         return golden
+
+
+def get_mapping(mapping_path):
+    with open(os.path.join(os.path.dirname(__file__), mapping_path)) as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=';')
+        return {row['golden_id']: int(row['cluster_id']) for row in reader}
+
+
+if __name__ == '__main__':
+    print(get_mapping('mapping.csv'))
