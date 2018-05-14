@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     for golden_id in tqdm.tqdm(test_data):
         ideal_synset = test_data[golden_id]['words']
-        words = clusters[mapping[golden_id]]['words']
+        words = list(clusters[mapping[golden_id]]['words'])
 
         generated_synsets = model.extract_clusters(words)
         generated_scores = [jaccard_similarity(ideal_synset, set(extracted)) for extracted in generated_synsets]

@@ -64,7 +64,7 @@ if __name__ == '__main__':
     print('model is launched')
     s = None
 
-    unique = ['ужимка', 'гримаса', 'мина']
+    unique = ['труд', 'работа', 'творение']
 
     word_groups = m.extract_clusters(unique)
     for group in word_groups:
