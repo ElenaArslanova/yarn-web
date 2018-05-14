@@ -223,7 +223,7 @@ class LayerModel(Model):
                 break
             synsets.append(new_synset)
         if layers_without_definitions:
-            print(layers_without_definitions)
+            # synsets.append(NewSynset([l.word for l in layers_without_definitions], None))
             self._process_layers_without_definitions(synsets, layers_without_definitions)
         return synsets
 
