@@ -9,7 +9,7 @@ from db.data.manager import load_fasttext_bin
 
 
 class WordToWord:
-    def __init__(self, threshold: int = 0.4, pretrained_model=None):
+    def __init__(self, threshold: float = 0.7, pretrained_model=None):
         """
         данный класс реализует функционал для выделения смысловых кластеров, ориентируясь на векторные представления
         слов некоторой предобученной модели.
@@ -42,7 +42,12 @@ class WordToWord:
         :return: возвращает список кластеров. кластер - такое подмножесто слов, что у них общий смсысл
         """
         pairs = [list(tuple_) for tuple_ in combinations(source_words, 2)]
+
         word_groups = [pair for pair in pairs if self.__is_similar(pair[0], [pair[1]])]
+
+        if not word_groups:
+            return [source_words]
+
         return [self.__gain_cluster(group, source_words) for group in word_groups]
 
     def __gain_cluster(self, group: List[str], source_words: List[str]) -> List[str]:
@@ -57,11 +62,9 @@ class WordToWord:
 if __name__ == '__main__':
     m = WordToWord()
     print('model is launched')
-    s = 'расплата;наказание;возмездие;кара;отплата;расплата;' \
-        'возмездие;кара;расплата;возмездие;кара;мзда;наказание;отплата;расплата;' \
-        'взыскание;кара;наказание;расплата;штраф;расправа'
+    s = None
 
-    unique = list(set(s.split(';')))
+    unique = ['ужимка', 'гримаса', 'мина']
 
     word_groups = m.extract_clusters(unique)
     for group in word_groups:

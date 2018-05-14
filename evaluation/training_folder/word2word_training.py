@@ -2,7 +2,7 @@ import json
 
 import tqdm
 
-from db.data.manager import get_golden_csv, read_pandas, get_mapping
+from db.data.manager import get_golden_csv, get_mapping
 from evaluation.clusters import read_clusters
 from models.metrics import jaccard_similarity
 from models.word_to_word.model import WordToWord
@@ -27,8 +27,9 @@ if __name__ == '__main__':
 
             generated_synsets = model.extract_clusters(words)
             scores = [jaccard_similarity(ideal_synset, set(synset)) for synset in generated_synsets]
+
             temp_results.append(max(scores))
-            print(max(scores))
+
         results[threshold] = np.mean(temp_results)
 
     with open('report.json', 'w') as fp:
