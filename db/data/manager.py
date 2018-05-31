@@ -85,8 +85,8 @@ def get_golden_csv(filename):
         return golden
 
 
-def get_mapping(mapping_path):
-    with open(os.path.join(os.path.dirname(__file__), mapping_path)) as csvfile:
+def get_mapping(mapping_file, mapping_dir='mappings'):
+    with open(os.path.join(os.path.dirname(__file__), mapping_dir, mapping_file)) as csvfile:
         reader = csv.DictReader(csvfile, delimiter=';')
         return {row['golden_id']: int(row['cluster_id']) for row in reader}
 
