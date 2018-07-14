@@ -3,6 +3,10 @@ from typing import List, Optional, Callable
 from models.processing import simple_normalization_tokens, tokenize
 
 
+def jaccard_similarity(correct: set, model_prediction: set):
+    return len(model_prediction.intersection(correct)) / len(model_prediction.union(correct))
+
+
 def jacard_metric(w1, w2, d1: List[str], d2: List[str]) -> float:
     """
     метрика для тестов
@@ -34,7 +38,7 @@ def jacard_with_word_influence(w1, w2, d1: List[str], d2: List[str]) -> float:
 
 
 def general_metric(w1: str, w2: str, d1: str, d2: str, sim_metric=jacard_metric,
-                   processing: Optional[Callable[[str], List[str]]]=simple_normalization_tokens):
+                   processing: Optional[Callable[[str], List[str]]] = simple_normalization_tokens):
     """
     функция, которая должна использоваться везде при работе с метриками, обобщает поведение сравнения
     :param w1: слово, которому соответствует определение d1

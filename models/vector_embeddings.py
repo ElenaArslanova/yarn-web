@@ -105,6 +105,15 @@ class FastTextWrapper:
             raise KeyError('Все слова неизвестны')
         return cosine_similarity(target_definition_vector, comparing_definitions_vectors)[0]
 
+    def is_word_similar_to_list(self, word: str, word_list: List[str]) -> bool:
+        """
+        Определяет, похоже ли слово на список других слов (да - если усредненная косинусная мера превосходит порог)
+        """
+        target_vector = np.array([self.__model[word]])
+        comparing_word_vectors = np.array([self.__model[w] for w in word_list])
+        average_similarity = np.mean(cosine_similarity(target_vector, comparing_word_vectors))
+        return average_similarity > self.__threshold
+
         # TODO: метод, принимающий список слов и возвращающий матрицу схожести каждого с каждым, similarity(w, w)=0
 
 
@@ -120,4 +129,4 @@ if __name__ == '__main__':
     m.set_new_strategy('closest')
     print(m.is_similar(automobile_definition, car_definitions))
 
-    # print(m.get_closest_def(automobile_definition, car_definitions))
+    print(m.get_closest_def(automobile_definition, car_definitions))
