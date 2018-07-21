@@ -3,6 +3,7 @@ from typing import List
 
 import pandas as pd
 import numpy as np
+import tqdm
 
 from apply.cluster import Cluster
 from db.data.manager import load_alchemy, load_fasttext_bin
@@ -43,10 +44,11 @@ class ClustersHolder:
         :return: None
         """
         where_to_add = {}
-        for synset in synsets:
+        for i, synset in enumerate(synsets):
             synset_vector = self.__extract_vector(synset)
             if type(synset_vector) != np.ndarray:
                 print('Проблемный синсет - не удалось извлечь вектор, далее такой синсет не будет учитываться')
+                print(synset.words)
                 continue
 
             if self.__clusters:
@@ -55,14 +57,15 @@ class ClustersHolder:
                 # если синсет похож на какой-то кластер, то данный синсет будет в него добавлен
                 # иначе синсет породит новый кластер
                 if similarities[max_similarity_idx] >= self.__threshold:
-                    where_to_add[synset] = (max_similarity_idx, synset_vector)
+                    where_to_add[i] = (max_similarity_idx, synset_vector)
                 else:
-                    where_to_add[synset] = (-1, synset_vector)
+                    where_to_add[i] = (-1, synset_vector)
             else:
-                where_to_add[synset] = (-1, synset_vector)
+                where_to_add[i] = (-1, synset_vector)
 
-        for synset in where_to_add:
-            idx, vector = where_to_add[synset]
+        for synset_number in where_to_add:
+            synset = synsets[synset_number]
+            idx, vector = where_to_add[synset_number]
             if idx == -1:
                 self.__clusters.append(Cluster(synset, vector))
             else:
@@ -76,7 +79,7 @@ class ClustersHolder:
     def __extract_vector(self, synset: NewSynset):
         if synset.definitions:
             try:
-                return self.__fasttext[synset.definitions[random.randint(0, len(synset.definitions - 1))]]
+                return self.__fasttext[synset.definitions[random.randint(0, len(synset.definitions) - 1)].definition]
             except KeyError:
                 try:
                     return self.__fasttext[synset.words[random.randint(0, len(synset.words) - 1)]]
@@ -92,6 +95,7 @@ class ClustersHolder:
 if __name__ == '__main__':
     model = LayerModel(0.45, None)
     model.set_fasttext_definition_strategy('average')
+    print('Модель загружена')
 
     read_count = 0  # сколько всего прочитано строк
     d = DefDict()  # словарь
@@ -104,14 +108,16 @@ if __name__ == '__main__':
     # после каждой итерации будет производиться сохранение результата, чтобы если что-то упало, это можно было бы не
     # перечитывать
     while read_count < 70468:  # столько синсетов всего
-        sub_frame = pd.read_csv('yarn-synsets.csv', skiprows=read_count, chunksize=chunk_size)
-        for _, row in sub_frame.iterrows():
-            words = row.words.split(';')
-            ordered_words = Word2VecOrdering.order_words_sequence_using_average_sim(words)
+        print(read_count)
+        sub_frame_reader = pd.read_csv('yarn-synsets.csv', skiprows=read_count, chunksize=chunk_size)
+        for sub_frame in sub_frame_reader:
+            for _, row in tqdm.tqdm(sub_frame.iterrows()):
+                words = row.words.split(';')
+                ordered_words = Word2VecOrdering.order_words_sequence_using_average_sim(words)
 
-            model_input = d.get_synset_definitions(ordered_words)  # словарь вида word: List[str] - список определений
-            model_output = model.extract_new_synsets(model_input)
-            ch.process_synsets(model_output)
+                model_input = d.get_synset_definitions(ordered_words)  # словарь вида word: List[str] - список определений
+                model_output = model.extract_new_synsets(model_input)
+                ch.process_synsets(model_output)
 
         print('Прочитано строк в итерации: {}'.format(sub_frame.shape[0]))
         print('Сохранение промежуточного результата в фрейм')

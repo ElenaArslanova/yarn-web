@@ -26,7 +26,7 @@ class Cluster:
         :param synset_vector: вектор синсета
         :return: косинусную близость
         """
-        return cosine_similarity([synset_vector], self.__vectors)[0]
+        return np.mean(cosine_similarity([synset_vector], self.__vectors)[0])
 
     def add(self, synset: NewSynset, synset_vector: np.ndarray):
         """
