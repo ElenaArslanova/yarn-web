@@ -3,94 +3,11 @@ import os
 from typing import List
 
 import pandas as pd
-import numpy as np
 import tqdm
 
-from apply.cluster import Cluster
-from db.data.manager import load_alchemy, load_fasttext_bin
+from apply.structures import DefDict, ClustersHolder
 from models.layer_model.additional import Word2VecOrdering
-from models.layer_model.model import LayerModel, NewSynset
-
-
-class DefDict:
-    def __init__(self):
-        self.__dictionary = {}
-        self.__alchemy = load_alchemy('data.db')
-
-    def get_synset_definitions(self, synset: List[str]):
-        """
-        Возвращает словарь определений для синсета
-        :param synset: лист слов
-        :return: словарь вида dict[word] = List[str] - список определений
-        """
-        need_description = [w for w in synset if w not in self.__dictionary]
-        new_words_with_descriptions = self.__alchemy.get_words_definitions(need_description)
-
-        for new_word in new_words_with_descriptions:
-            self.__dictionary[new_word] = new_words_with_descriptions[new_word]
-
-        return {x: self.__dictionary[x] for x in synset}
-
-
-class ClustersHolder:
-    def __init__(self, threshold=0.4):
-        self.__clusters = []
-        self.__fasttext = load_fasttext_bin('fasttext_model/araneum_none_fasttextcbow_300_5_2018.model')
-        self.__threshold = threshold
-
-    def process_synsets(self, synsets: List[NewSynset]):
-        """
-        обрабатывает список синсетов, доабавляя каждый в существующий кластер, либо в новый
-        :param synsets: список синсетов
-        :return: None
-        """
-        where_to_add = {}
-        for i, synset in enumerate(synsets):
-            synset_vector = self.__extract_vector(synset)
-            if type(synset_vector) != np.ndarray:
-                print('Проблемный синсет - не удалось извлечь вектор, далее такой синсет не будет учитываться')
-                print(synset.words)
-                continue
-
-            if self.__clusters:
-                similarities = [c.similarity_to(synset, synset_vector) for c in self.__clusters]
-                max_similarity_idx = np.argmax(similarities)
-                # если синсет похож на какой-то кластер, то данный синсет будет в него добавлен
-                # иначе синсет породит новый кластер
-                if similarities[max_similarity_idx] >= self.__threshold:
-                    where_to_add[i] = (max_similarity_idx, synset_vector)
-                else:
-                    where_to_add[i] = (-1, synset_vector)
-            else:
-                where_to_add[i] = (-1, synset_vector)
-
-        for synset_number in where_to_add:
-            synset = synsets[synset_number]
-            idx, vector = where_to_add[synset_number]
-            if idx == -1:
-                self.__clusters.append(Cluster(synset, vector))
-            else:
-                self.__clusters[idx].add(synset, vector)
-
-    def save_clusters_to_frame(self, name=''):
-        words = []
-        vectors = []
-        pass
-
-    def __extract_vector(self, synset: NewSynset):
-        if synset.definitions:
-            try:
-                return self.__fasttext[synset.definitions[random.randint(0, len(synset.definitions) - 1)].definition]
-            except KeyError:
-                try:
-                    return self.__fasttext[synset.words[random.randint(0, len(synset.words) - 1)]]
-                except KeyError:
-                    return None
-        else:
-            try:
-                return self.__fasttext[synset.words[random.randint(0, len(synset.words) - 1)]]
-            except KeyError:
-                return None
+from models.layer_model.model import LayerModel
 
 
 if __name__ == '__main__':
@@ -111,7 +28,7 @@ if __name__ == '__main__':
     # перечитывать
     while read_count < 70468:  # столько синсетов всего
         print(read_count)
-        sub_frame_reader = pd.read_csv('yarn-synsets_small.csv', skiprows=read_count, chunksize=chunk_size)
+        sub_frame_reader = pd.read_csv('yarn-synsets.csv', skiprows=read_count, chunksize=chunk_size)
         for sub_frame in sub_frame_reader:
             for _, row in tqdm.tqdm(sub_frame.iterrows()):
                 words = row.words.split(';')
@@ -142,5 +59,3 @@ if __name__ == '__main__':
 
         # ch.save_clusters_to_frame('clusters{}_{}.csv'.format(last_pointer, read_count))
         # print('Сохранен результат текущей итерации в файл {}'.format('clusters{}_{}.csv'.format(last_pointer, read_count)))
-
-
