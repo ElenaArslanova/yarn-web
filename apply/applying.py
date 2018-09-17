@@ -1,4 +1,5 @@
 import random
+import os
 from typing import List
 
 import pandas as pd
@@ -99,7 +100,8 @@ if __name__ == '__main__':
 
     read_count = 0  # сколько всего прочитано строк
     d = DefDict()  # словарь
-    ch = ClustersHolder()  # лежат все кластеры
+    # ch = ClustersHolder()  # лежат все кластеры
+    processed = {'yarn_id': [], 'words': [], 'definitions': []}
 
     chunk_size = 100  # сколько синсевто будет считано в одну тиреацию
     from_start = True
@@ -109,7 +111,7 @@ if __name__ == '__main__':
     # перечитывать
     while read_count < 70468:  # столько синсетов всего
         print(read_count)
-        sub_frame_reader = pd.read_csv('yarn-synsets.csv', skiprows=read_count, chunksize=chunk_size)
+        sub_frame_reader = pd.read_csv('yarn-synsets_small.csv', skiprows=read_count, chunksize=chunk_size)
         for sub_frame in sub_frame_reader:
             for _, row in tqdm.tqdm(sub_frame.iterrows()):
                 words = row.words.split(';')
@@ -117,13 +119,28 @@ if __name__ == '__main__':
 
                 model_input = d.get_synset_definitions(ordered_words)  # словарь вида word: List[str] - список определений
                 model_output = model.extract_new_synsets(model_input)
-                ch.process_synsets(model_output)
+
+                for new_synset in model_output:
+                    processed['yarn_id'].append(row.id)
+                    processed['words'].append(';'.join(new_synset.words))
+                    if new_synset.definitions:
+                        processed['definitions'].append(['Word: {}, definition: {}'.format(d.word, d.definition)
+                                                     for d in new_synset.definitions])
+                    else:
+                        processed['definitions'].append([])
+                # ch.process_synsets(model_output)
 
         print('Прочитано строк в итерации: {}'.format(sub_frame.shape[0]))
         print('Сохранение промежуточного результата в фрейм')
         last_pointer = read_count
         read_count += sub_frame.shape[0]
-        ch.save_clusters_to_frame('clusters{}_{}.csv'.format(last_pointer, read_count))
-        print('Сохранен результат текущей итерации в файл {}'.format('clusters{}_{}.csv'.format(last_pointer, read_count)))
+
+        pd.DataFrame(processed).to_csv(os.path.join('new_synsets', 'new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
+        processed = {'yarn_id': [], 'words': [], 'definitions': []}
+        print('Сохранен результат текущей итерации в файл {}'.format('new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
+        break
+
+        # ch.save_clusters_to_frame('clusters{}_{}.csv'.format(last_pointer, read_count))
+        # print('Сохранен результат текущей итерации в файл {}'.format('clusters{}_{}.csv'.format(last_pointer, read_count)))
 
 
