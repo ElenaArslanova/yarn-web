@@ -15,7 +15,7 @@ if __name__ == '__main__':
     model.set_fasttext_definition_strategy('average')
     print('Модель загружена')
 
-    read_count = 0  # сколько всего прочитано строк
+    read_count = 9000  # сколько всего прочитано строк
     d = DefDict()  # словарь
 
     # ch = ClustersHolder()  # лежат все кластеры
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # перечитывать
     while read_count < 70468:  # столько синсетов всего
         print(read_count)
-        sub_frame_reader = pd.read_csv('yarn-synsets.csv', skiprows=read_count, chunksize=chunk_size)
+        sub_frame_reader = pd.read_csv('yarn-synsets.csv', skiprows=range(1, read_count), chunksize=chunk_size)
         for sub_frame in sub_frame_reader:
             for _, row in tqdm.tqdm(sub_frame.iterrows()):
                 words = row.words.split(';')
