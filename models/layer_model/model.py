@@ -209,24 +209,24 @@ class LayerModel(Model):
         layers = self._create_layers(synset_definition)
         layers_with_definitions, layers_without_definitions = self._filter_layers_with_no_definitions(layers)
         synsets = []
-        while True:
-            new_synset = self._extract_new_synset_from_layers(layers_with_definitions)
-            if not new_synset.words:
-                break
-            synsets.append(new_synset)
-        if layers_without_definitions:
-            # synsets.append(NewSynset([l.word for l in layers_without_definitions], None))
-            try:
+        try:
+            while True:
+                new_synset = self._extract_new_synset_from_layers(layers_with_definitions)
+                if not new_synset.words:
+                    break
+                synsets.append(new_synset)
+            if layers_without_definitions:
+                # synsets.append(NewSynset([l.word for l in layers_without_definitions], None))
                 self._process_layers_without_definitions(synsets, layers_without_definitions)
-            except KeyError as e:
-                # если где-то внутри fasttext'a произошла ошибка (модель не знает слова),
-                # возвращается исходный синсет без изменений
-                print('-------------------------------------')
-                print(e)
-                words = [word for word in synset_definition]
-                print('Исходный синсет: {}'.format(', '.join(words)))
-                print('-------------------------------------')
-                return [NewSynset(words, [])]
+        except KeyError as e:
+            # если где-то внутри fasttext'a произошла ошибка (модель не знает слова),
+            # возвращается исходный синсет без изменений
+            print('-------------------------------------')
+            print(e)
+            words = [word for word in synset_definition]
+            print('Исходный синсет: {}'.format(', '.join(words)))
+            print('-------------------------------------')
+            return [NewSynset(words, [])]  # не указаны id определений
         return synsets
 
     def _matrix_processing(self, matrix):
