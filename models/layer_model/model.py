@@ -85,8 +85,8 @@ class LayerModel(Model):
     def set_fasttext_threshold(self, new_threshold):
         self._fasttext.set_new_threshold(new_threshold)
 
-    def definitions_similarity(self, first: str, second: str) -> float:
-        return self._metric(w1='', d1=first, w2='', d2=second)
+    def definitions_similarity(self, first: Definition, second: Definition) -> float:
+        return self._metric(w1='', d1=first.definition, w2='', d2=second.definition)
 
 
     def _is_definition_in_chain(self, definition: Definition, chain: List[Definition]) -> bool:
@@ -98,33 +98,25 @@ class LayerModel(Model):
         """
         return self._fasttext.is_similar(definition, chain)
 
-    def _combine_similar_definitions(self, word: str, definitions: List[str]) -> List[Definition]:
-        """
-        Оставляет только уникальные по смыслу определения слова
-        (например, если два определения похожи, то берется первое)
-        :param definitions: список исходных определений
-        :return: список разных по смыслу определений
-        """
-        # TODO: сделать объединение через fasttext
-        similarity_matrix = self._create_similarity_matrix(definitions, self.definitions_similarity)
-        similar_indices = self._matrix_processing(similarity_matrix)
-        unique_meanings = [Definition(word, d) for d in
-                           (definitions[i] for i in np.setdiff1d(np.arange(len(definitions)), similar_indices))]
-        if similar_indices.any():
-            combined_definition = Definition(word, definitions[similar_indices[0]])
-            combined_definition.add_alternative_definitions(definitions[i] for i in similar_indices[1:])
-            unique_meanings.append(combined_definition)
-        return unique_meanings
+    # def _combine_similar_definitions(self, word: str, definitions: List[Definition]) -> List[Definition]:
+    #     """
+    #     Оставляет только уникальные по смыслу определения слова
+    #     (например, если два определения похожи, то берется первое)
+    #     :param definitions: список исходных определений
+    #     :return: список разных по смыслу определений
+    #     """
+    #     # TODO: сделать объединение через fasttext
+    #     similarity_matrix = self._create_similarity_matrix(definitions, self.definitions_similarity)
+    #     similar_indices = self._matrix_processing(similarity_matrix)
+    #     unique_meanings = [Definition(word, d) for d in
+    #                        (definitions[i] for i in np.setdiff1d(np.arange(len(definitions)), similar_indices))]
+    #     if similar_indices.any():
+    #         combined_definition = Definition(word, definitions[similar_indices[0]])
+    #         combined_definition.add_alternative_definitions(definitions[i] for i in similar_indices[1:])
+    #         unique_meanings.append(combined_definition)
+    #     return unique_meanings
 
-    def _create_definitions(self, word: str, definitions: List[str]) -> List[Definition]:
-        """
-        создает список определений, считается, что каждое строковое определение из словаря уникально по смыслу
-        :param definitions: список исходных определений
-        :return:
-        """
-        return [Definition(word, d) for d in definitions]
-
-    def _create_layers(self, synset_definition: Dict[str, List[str]]) -> List[Layer]:
+    def _create_layers(self, synset_definition: Dict[str, List[Definition]]) -> List[Layer]:
         """
         :param synset_definitions: слова синсета с определениями
         :return: уровни из уникальных определений слов
@@ -135,7 +127,7 @@ class LayerModel(Model):
             if not definitions:
                 layers.append(Layer(word))
             else:
-                layers.append(Layer(word, self._create_definitions(word, definitions)))
+                layers.append(Layer(word, definitions))
         for adjacent in zip_longest(layers, layers[1:]):
             adjacent[0].next_layer = adjacent[1]
         return layers
@@ -208,7 +200,7 @@ class LayerModel(Model):
         if unused_layers:
             new_synsets.append(NewSynset([l.word for l in unused_layers], None))
 
-    def extract_new_synsets(self, synset_definition: Dict[str, List[str]]) -> List[NewSynset]:
+    def extract_new_synsets(self, synset_definition: Dict[str, List[Definition]]) -> List[NewSynset]:
         """
         выделяет из данного синсета новые по смыслу слов, слова без определений в словаре собираются в отдельный синсет
         :param synset_definition: слова синсета с определениями (из базы)

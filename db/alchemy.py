@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
 from db.base import Base, Word, User, Synonym, Edition, Synset, SynsetWord, Definition, WordDefinitionRelation
+from models.layer_model.base import Definition as ModelDefinition
 
 
 class Alchemy:
@@ -18,7 +19,7 @@ class Alchemy:
         return self.__session
 
     def get_synsets_definitions(self, synset_id_range: Tuple[int, int] = (1,)) -> Tuple[List[int],
-                                                                                        List[Dict[str, List[str]]]]:
+                                                                                        List[Dict[str, List[ModelDefinition]]]]:
         """
         :param synset_id_range: диапазон id синсетов, которые нужно вернуть с их определениями
         :return: возвращает лист словарей,  где в каждом словаре:
@@ -53,7 +54,7 @@ class Alchemy:
             for r in relations_filtered:
                 word = r[1].word
                 if r[2]:
-                    definition = definitions[r[2].id]
+                    definition = ModelDefinition(r[2].id, word, definitions[r[2].id])
                     if word in syn:
                         syn[word].append(definition)
                     else:
@@ -71,18 +72,18 @@ class Alchemy:
         """
         return self.get_synsets_definitions((synset_id, synset_id))
 
-    def get_word_definitions(self, word: str) -> List[str]:
+    def get_word_definitions(self, word: str) -> List[ModelDefinition]:
         """
         принимает слово и возвращает все имеющиеся в базе определения
         :param word: слово
         :return: список определений слова
         """
-        definitions = self.__session.query(Definition.definition).filter(Word.word == word) \
+        definitions = self.__session.query(Definition).filter(Word.word == word) \
             .filter(Word.id == WordDefinitionRelation.word_id) \
             .filter(WordDefinitionRelation.definition_id == Definition.id).all()
-        if not definitions:
-            return []
-        return [x[0] for x in definitions if re.sub(r'[^\w\s]','', x[0])]
+        word_definitions = [] if not definitions else [ModelDefinition(x.id, word, x.definition)
+                                                       for x in definitions if re.sub(r'[^\w\s]','', x.definition)]
+        return word_definitions
 
     def get_words_definitions(self, words: List[str]):
         result = {}

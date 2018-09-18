@@ -17,8 +17,9 @@ if __name__ == '__main__':
 
     read_count = 0  # сколько всего прочитано строк
     d = DefDict()  # словарь
+
     # ch = ClustersHolder()  # лежат все кластеры
-    processed = {'yarn_id': [], 'words': [], 'definitions': []}
+    processed = {'yarn_id': [], 'words': [], 'def_ids': []}
 
     chunk_size = 100  # сколько синсевто будет считано в одну тиреацию
     from_start = True
@@ -41,10 +42,9 @@ if __name__ == '__main__':
                     processed['yarn_id'].append(row.id)
                     processed['words'].append(';'.join(new_synset.words))
                     if new_synset.definitions:
-                        processed['definitions'].append(['Word: {}, definition: {}'.format(d.word, d.definition)
-                                                     for d in new_synset.definitions])
+                        processed['def_ids'].append(';'.join(str(d.id) for d in new_synset.definitions))
                     else:
-                        processed['definitions'].append([])
+                        processed['def_ids'].append('')
                 # ch.process_synsets(model_output)
 
         print('Прочитано строк в итерации: {}'.format(sub_frame.shape[0]))
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         read_count += sub_frame.shape[0]
 
         pd.DataFrame(processed).to_csv(os.path.join('new_synsets', 'new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
-        processed = {'yarn_id': [], 'words': [], 'definitions': []}
+        processed = {'yarn_id': [], 'words': [], 'def_ids': []}
         print('Сохранен результат текущей итерации в файл {}'.format('new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
         break
 
