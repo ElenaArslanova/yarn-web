@@ -16,15 +16,19 @@ class DefDict:
         """
         Возвращает словарь определений для синсета
         :param synset: лист слов
-        :return: словарь вида dict[word] = List[str] - список определений
+        :return: словарь вида dict[word] = List[Definition] - список определений
         """
         need_description = [w for w in synset if w not in self.__dictionary]
         new_words_with_descriptions = self.__alchemy.get_words_definitions(need_description)
 
         for new_word in new_words_with_descriptions:
             self.__dictionary[new_word] = new_words_with_descriptions[new_word]
-
-        return {x: self.__dictionary[x] for x in synset}
+        definitions = {x: self.__dictionary[x] for x in synset}
+        for word in definitions:
+            if definitions[word]:
+                for d in definitions[word]:
+                    d.is_linked = None
+        return definitions
 
 
 class ClustersHolder:

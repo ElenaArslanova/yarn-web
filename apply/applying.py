@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # ch = ClustersHolder()  # лежат все кластеры
     processed = {'yarn_id': [], 'words': [], 'def_ids': []}
 
-    chunk_size = 100  # сколько синсевто будет считано в одну тиреацию
+    chunk_size = 1000  # сколько синсевто будет считано в одну тиреацию
     from_start = True
     # TODO нужно учесть, что мы сохраняем данные и если что-то упадет, то заново все считывать не надо
 
@@ -47,15 +47,14 @@ if __name__ == '__main__':
                         processed['def_ids'].append('')
                 # ch.process_synsets(model_output)
 
-        print('Прочитано строк в итерации: {}'.format(sub_frame.shape[0]))
-        print('Сохранение промежуточного результата в фрейм')
-        last_pointer = read_count
-        read_count += sub_frame.shape[0]
+            print('Прочитано строк в итерации: {}'.format(sub_frame.shape[0]))
+            last_pointer = read_count
+            read_count += sub_frame.shape[0]
 
-        pd.DataFrame(processed).to_csv(os.path.join('new_synsets', 'new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
-        processed = {'yarn_id': [], 'words': [], 'def_ids': []}
-        print('Сохранен результат текущей итерации в файл {}'.format('new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
-        break
+            pd.DataFrame(processed).to_csv(os.path.join('new_synsets', 'new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
+            processed = {'yarn_id': [], 'words': [], 'def_ids': []}
+            print('Сохранен результат текущей итерации в файл {}'.format('new_synsets_{}_{}.csv'.format(last_pointer, read_count)))
+        # break
 
         # ch.save_clusters_to_frame('clusters{}_{}.csv'.format(last_pointer, read_count))
         # print('Сохранен результат текущей итерации в файл {}'.format('clusters{}_{}.csv'.format(last_pointer, read_count)))
